@@ -34,3 +34,26 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
   dialect: 'mysql'
 });
 
+// Define models
+const User = sequelize.define('User', {
+  username: { type: DataTypes.STRING, unique: true },
+  email: { type: DataTypes.STRING, unique: true },
+  password: { type: DataTypes.STRING }
+});
+
+const Project = sequelize.define('Project', {
+  title: DataTypes.STRING,
+  description: DataTypes.TEXT
+});
+
+const Snippet = sequelize.define('Snippet', {
+  content: DataTypes.TEXT,
+  language: DataTypes.STRING
+});
+
+// Relationships
+User.hasMany(Project);
+Project.belongsTo(User);
+
+Project.hasMany(Snippet);
+Snippet.belongsTo(Project);
