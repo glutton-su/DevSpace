@@ -115,3 +115,15 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+// Get all projects for logged-in user
+app.get('/api/projects', authenticate, async (req, res) => {
+  const projects = await Project.findAll({ where: { UserId: req.user.id } });
+  res.json(projects);
+});
+
+// Create new project
+app.post('/api/projects', authenticate, async (req, res) => {
+  const { title, description } = req.body;
+  const project = await Project.create({ title, description, UserId: req.user.id });
+  res.status(201).json(project);
+});
