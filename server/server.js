@@ -127,3 +127,21 @@ app.post('/api/projects', authenticate, async (req, res) => {
   const project = await Project.create({ title, description, UserId: req.user.id });
   res.status(201).json(project);
 });
+
+// Get snippets for a project
+app.get('/api/projects/:id/snippets', authenticate, async (req, res) => {
+  const snippets = await Snippet.findAll({ where: { ProjectId: req.params.id } });
+  res.json(snippets);
+});
+
+// Create snippet in a project
+app.post('/api/projects/:id/snippets', authenticate, async (req, res) => {
+  const { content, language } = req.body;
+  const snippet = await Snippet.create({ content, language, ProjectId: req.params.id });
+  res.status(201).json(snippet);
+});
+
+// Get current user profile
+app.get('/api/users/me', authenticate, async (req, res) => {
+  res.json({ id: req.user.id, username: req.user.username, email: req.user.email });
+});
