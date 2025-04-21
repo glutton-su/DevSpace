@@ -145,3 +145,25 @@ app.post('/api/projects/:id/snippets', authenticate, async (req, res) => {
 app.get('/api/users/me', authenticate, async (req, res) => {
   res.json({ id: req.user.id, username: req.user.username, email: req.user.email });
 });
+
+// --------------------------
+// WEBSOCKETS
+// --------------------------
+io.on('connection', socket => {
+  console.log('A user connected:', socket.id);
+
+  // Join a project room
+  socket.on('joinRoom', roomId => {
+    socket.join(roomId);
+    console.log(`User ${socket.id} joined room ${roomId}`);
+  });
+
+  // Receive code update and broadcast to others
+  socket.on('codeUpdate', ({ roomId, content }) => {
+    socket.to(roomId).emit('receiveCode', content);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
