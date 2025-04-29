@@ -21,7 +21,7 @@ const io = new Server(server, {
   }
 });
 
-// Middleware___
+// Middleware_
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
