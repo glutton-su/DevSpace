@@ -1,184 +1,80 @@
-// Load environment variables from .env file
-require('dotenv').config();
-
-// Import required modules
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const http = require('http');
-const { Server } = require('socket.io');
-const { Sequelize, DataTypes } = require('sequelize');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const { body, validationResult } = require('express-validator');
+const socketIo = require('socket.io');
+require('dotenv').config();
 
-// Setup Express and HTTP Server
+const db = require('./config/database');
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const projectRoutes = require('./routes/projects');
+const codeRoutes = require('./routes/codes');
+const commentRoutes = require('./routes/comments');
+const notificationRoutes = require('./routes/notifications');
+const socketHandler = require('./sockets/socketHandler');
+
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
+const io = socketIo(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST']
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    methods: ["GET", "POST"]
   }
 });
 
-// Middleware__
-app.use(cors());
-app.use(express.json());
+// Security middleware
+app.use(helmet());
+app.use(cors({
+  origin: process.env.CLIENT_URL || "http://localhost:3000",
+  credentials: true
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10 // limit each IP to 100 requests per windowMs
+});
+app.use('/api/', limiter);
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// --------------------------
-// DATABASE SETUP WITH SEQUELIZE
-// --------------------------
-const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
-  host: process.env.DB_HOST || 'localhost',
-  dialect: 'mysql'
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/codes', codeRoutes);
+app.use('/api/comments', commentRoutes);
+app.use('/api/notifications', notificationRoutes);
+
+// Socket handling
+socketHandler(io);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Define models
-const User = sequelize.define('User', {
-  username: { type: DataTypes.STRING, unique: true },
-  email: { type: DataTypes.STRING, unique: true },
-  password: { type: DataTypes.STRING }
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Route not found' });
 });
 
-const Project = sequelize.define('Project', {
-  title: DataTypes.STRING,
-  description: DataTypes.TEXT
-});
-
-const Snippet = sequelize.define('Snippet', {
-  content: DataTypes.TEXT,
-  language: DataTypes.STRING
-});
-
-// Relationships
-User.hasMany(Project);
-Project.belongsTo(User);
-
-Project.hasMany(Snippet);
-Snippet.belongsTo(Project);
-
-// --------------------------
-// ROUTES
-// --------------------------
-
-// Auth: Register
-app.post('/api/auth/register',
-  body('username').notEmpty(),
-  body('email').isEmail(),
-  body('password').isLength({ min: 6 }),
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-
-    const { username, email, password } = req.body;
-
-    try {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const user = await User.create({ username, email, password: hashedPassword });
-      res.status(201).json({ message: 'User registered', userId: user.id });
-    } catch (err) {
-      res.status(500).json({ error: 'User registration failed' });
-    }
-  }
-);
-
-// Auth: Login
-app.post('/api/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-  try {
-    const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(401).json({ error: 'Invalid credentials' });
-
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || 'devspace_secret');
-    res.json({ token });
-  } catch (err) {
-    res.status(500).json({ error: 'Login failed' });
-  }
-});
-
-// Middleware to protect routes
-const authenticate = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.sendStatus(401);
-
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'devspace_secret');
-    req.user = await User.findByPk(decoded.id);
-    next();
-  } catch {
-    res.sendStatus(403);
-  }
-};
-
-// Get all projects for logged-in user
-app.get('/api/projects', authenticate, async (req, res) => {
-  const projects = await Project.findAll({ where: { UserId: req.user.id } });
-  res.json(projects);
-});
-
-// Create new project
-app.post('/api/projects', authenticate, async (req, res) => {
-  const { title, description } = req.body;
-  const project = await Project.create({ title, description, UserId: req.user.id });
-  res.status(201).json(project);
-});
-
-// Get snippets for a project
-app.get('/api/projects/:id/snippets', authenticate, async (req, res) => {
-  const snippets = await Snippet.findAll({ where: { ProjectId: req.params.id } });
-  res.json(snippets);
-});
-
-// Create snippet in a project
-app.post('/api/projects/:id/snippets', authenticate, async (req, res) => {
-  const { content, language } = req.body;
-  const snippet = await Snippet.create({ content, language, ProjectId: req.params.id });
-  res.status(201).json(snippet);
-});
-
-// Get current user profile
-app.get('/api/users/me', authenticate, async (req, res) => {
-  res.json({ id: req.user.id, username: req.user.username, email: req.user.email });
-});
-
-// --------------------------
-// WEBSOCKETS
-// --------------------------
-io.on('connection', socket => {
-  console.log('A user connected:', socket.id);
-
-  // Join a project room
-  socket.on('joinRoom', roomId => {
-    socket.join(roomId);
-    console.log(`User ${socket.id} joined room ${roomId}`);
-  });
-
-  // Receive code update and broadcast to others
-  socket.on('codeUpdate', ({ roomId, content }) => {
-    socket.to(roomId).emit('receiveCode', content);
-  });
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    error: 'Something went wrong!',
+    ...(process.env.NODE_ENV === 'development' && { details: err.message })
   });
 });
 
-// --------------------------
-// START SERVER AND CONNECT DB
-// --------------------------
-sequelize.sync()
-  .then(() => {
-    console.log('Database connected');
-    const PORT = process.env.PORT || 5000;
-    server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('Failed to connect to database:', err);
-  });
+const PORT = process.env.PORT || 5000;
+
+server.listen(PORT, () => {
+  console.log(`DevSpace server running on port ${PORT}`);
+  console.log(`Health check: http://localhost:${PORT}/api/health`);
+});
