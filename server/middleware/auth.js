@@ -1,71 +1,49 @@
-const jwt = require('jsonwebtoken');
-const db = require('../config/database');
+const jwt = require("jsonwebtoken");
+const { User } = require("../models");
 
-class AuthMiddleware {
-  authenticate(req, res, next) {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+const auth = async (req, res, next) => {
+  try {
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+
     if (!token) {
-      return res.status(401).json({ error: 'Access denied. No token provided.' });
+      return res.status(401).json({ message: "No token, authorization denied" });
     }
-    
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
-      next();
-    } catch (error) {
-      res.status(401).json({ error: 'Invalid token.' });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findByPk(decoded.userId, {
+      attributes: { exclude: ["passwordHash"] },
+    });
+
+    if (!user) {
+      return res.status(401).json({ message: "Token is not valid" });
     }
-  }
-  
-  authorize(roles = []) {
-    return async (req, res, next) => {
-      try {
-        if (!req.user) {
-          return res.status(401).json({ error: 'Authentication required' });
-        }
-        
-        // Get user role from database
-        const [users] = await db.execute(
-          'SELECT role FROM users WHERE id = ?',
-          [req.user.userId]
-        );
-        
-        if (users.length === 0) {
-          return res.status(404).json({ error: 'User not found' });
-        }
-        
-        const userRole = users[0].role;
-        
-        if (roles.length && !roles.includes(userRole)) {
-          return res.status(403).json({ error: 'Insufficient permissions' });
-        }
-        
-        req.user.role = userRole;
-        next();
-      } catch (error) {
-        console.error('Authorization error:', error);
-        res.status(500).json({ error: 'Authorization failed' });
-      }
-    };
-  }
-  
-  optional(req, res, next) {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return next();
-    }
-    
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
-    } catch (error) {
-      // Token is invalid, but that's okay for optional auth
-    }
-    
+
+    req.user = user;
     next();
+  } catch (error) {
+    console.error("Auth middleware error:", error);
+    res.status(401).json({ message: "Token is not valid" });
   }
-}
+};
 
-module.exports = new AuthMiddleware();
+const requireRole = (roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res
+        .status(403)
+        .json({ message: "Insufficient permissions" });
+    }
+
+    next();
+  };
+};
+
+module.exports = {
+  auth,
+  requireRole,
+};
