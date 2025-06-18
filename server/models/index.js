@@ -9,6 +9,7 @@ const ProjectTag = require("./ProjectTag");
 const Notification = require("./Notification");
 const Comment = require("./Comment");
 const UserStats = require("./UserStats");
+const File = require("./File");
 
 // Initialize models
 const models = {
@@ -22,6 +23,7 @@ const models = {
   Notification: Notification(sequelize),
   Comment: Comment(sequelize),
   UserStats: UserStats(sequelize),
+  File: File(sequelize),
 };
 
 // Define associations

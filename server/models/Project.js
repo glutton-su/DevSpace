@@ -93,6 +93,10 @@ module.exports = (sequelize) => {
       foreignKey: "forkedFrom",
       as: "forks",
     });
+    Project.hasMany(models.File, { 
+    foreignKey: "projectId",
+    as: "files",
+  });
   };
 
   return Project;

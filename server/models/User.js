@@ -109,6 +109,10 @@ module.exports = (sequelize) => {
       foreignKey: "userId",
       as: "stats",
     });
+    User.hasMany(models.File, { 
+    foreignKey: "userId",
+    as: "files",
+  });
   };
 
   return User;
