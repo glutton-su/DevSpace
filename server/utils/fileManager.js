@@ -84,7 +84,7 @@ class FileManager {
 
   static isCodeFile(filename) {
     const codeExtensions = [
-      ".js", ".ts", ".jsx", ".tsx", ".py", ".java", ".cpp", ".c", ".h",
+      ".js", ".ts", ".jsx", ".jsx", ".py", ".java", ".cpp", ".c", ".h",
       ".css", ".html", ".xml", ".json", ".md", ".sql", ".php", ".rb",
       ".go", ".rs", ".swift", ".kt", ".dart", ".vue", ".scss", ".sass",
       ".less", ".yml", ".yaml", ".toml", ".ini", ".cfg", ".conf", ".txt"

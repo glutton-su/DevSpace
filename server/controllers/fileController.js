@@ -139,7 +139,7 @@ const uploadCodeFiles = async (req, res) => {
         ".js": "javascript",
         ".ts": "typescript",
         ".jsx": "javascript",
-        ".tsx": "typescript",
+        ".jsx": "typescript",
         ".py": "python",
         ".java": "java",
         ".cpp": "cpp",

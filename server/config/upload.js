@@ -55,7 +55,7 @@ const imageFilter = (req, file, cb) => {
 
 // File filter for code files
 const codeFileFilter = (req, file, cb) => {
-  const allowedTypes = /txt|js|ts|jsx|tsx|py|java|cpp|c|h|css|html|xml|json|md|sql|php|rb|go|rs|swift|kt|dart|vue|scss|sass|less|yml|yaml|toml|ini|cfg|conf|log/;
+  const allowedTypes = /txt|js|ts|jsx|jsx|py|java|cpp|c|h|css|html|xml|json|md|sql|php|rb|go|rs|swift|kt|dart|vue|scss|sass|less|yml|yaml|toml|ini|cfg|conf|log/;
   const extname = allowedTypes.test(
     path.extname(file.originalname).toLowerCase()
   );
