@@ -1,216 +1,364 @@
-
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Layout } from '@/components/layout/Layout';
-import { ProjectCard } from '@/components/projects/ProjectCard';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { projectsAPI } from '@/lib/api';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '../context/AuthContext';
+import ProjectCard from '../components/features/ProjectCard';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import { 
   Plus, 
   Search, 
-  Filter,
+  Filter, 
+  Folder,
+  Star,
+  GitFork,
+  Archive,
   Grid,
   List
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-export const Projects = () => {
+const Projects = () => {
+  const { user } = useAuth();
   const [projects, setProjects] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState('all');
-  const [selectedTag, setSelectedTag] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('all'); // 'all', 'owned', 'starred', 'forked'
+  const [sortBy, setSortBy] = useState('updated');
   const [viewMode, setViewMode] = useState('grid');
-  const { toast } = useToast();
-
-  const languages = ['JavaScript', 'Python', 'TypeScript', 'Java', 'Go', 'Rust'];
-  const tags = ['React', 'Vue', 'Angular', 'Frontend', 'Backend', 'Mobile', 'Web', 'API'];
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const { projects } = await projectsAPI.getProjects({
-          search: searchTerm,
-          language: selectedLanguage !== 'all' ? selectedLanguage : undefined,
-          tag: selectedTag !== 'all' ? selectedTag : undefined
-        });
-        setProjects(projects);
-      } catch (error) {
-        console.error('Failed to load projects:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load projects',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
+    fetchProjects();
+  }, [filterType, sortBy, showArchived]);
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      // Mock projects data
+      const mockProjects = [
+        {
+          id: 1,
+          name: 'React Component Library',
+          description: 'A comprehensive library of reusable React components with TypeScript support and Storybook documentation.',
+          owner: {
+            id: user?.id,
+            username: user?.username,
+            name: user?.name,
+            avatar: user?.avatar
+          },
+          languages: ['javascript', 'typescript', 'css'],
+          tags: ['react', 'components', 'ui', 'typescript'],
+          stars: 45,
+          forks: 12,
+          views: 234,
+          snippetsCount: 28,
+          collaborators: 3,
+          isPrivate: false,
+          isArchived: false,
+          allowCollaboration: true,
+          template: 'react',
+          createdAt: '2024-01-10T00:00:00Z',
+          updatedAt: '2024-01-15T12:00:00Z'
+        },
+        {
+          id: 2,
+          name: 'Python ML Algorithms',
+          description: 'Implementation of various machine learning algorithms from scratch using Python and NumPy.',
+          owner: {
+            id: 2,
+            username: 'pythonista',
+            name: 'Sarah Chen',
+            avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=50&h=50&dpr=2'
+          },
+          languages: ['python'],
+          tags: ['machine-learning', 'algorithms', 'numpy', 'data-science'],
+          stars: 67,
+          forks: 23,
+          views: 456,
+          snippetsCount: 15,
+          collaborators: 2,
+          isPrivate: false,
+          isArchived: false,
+          allowCollaboration: true,
+          template: 'python'
+        }
+      ];
+      const params = {};
+      if (filterType !== 'all') params.filter = filterType;
+      if (showArchived) params.includeArchived = true;
+      
+      const response = await projectAPI.getProjects(params);
+      let filteredProjects = response.data || response;
+
+      // Apply filters
+      if (filterType === 'owned') {
+        filteredProjects = filteredProjects.filter(p => p.owner.id === user?.id);
+      } else if (filterType === 'starred') {
+        // This would be handled by backend with user's starred projects
+        filteredProjects = filteredProjects.filter(p => p.isStarred);
+      } else if (filterType === 'forked') {
+        // This would be handled by backend with user's forked projects
+        filteredProjects = filteredProjects.filter(p => p.forkedFrom);
       }
-    };
 
-    loadProjects();
-  }, [searchTerm, selectedLanguage, selectedTag, toast]);
+      // Show/hide archived
+      if (!showArchived) {
+        filteredProjects = filteredProjects.filter(p => !p.isArchived);
+      }
 
-  const filteredProjects = projects.filter((project) => {
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLanguage = selectedLanguage === 'all' || project.language === selectedLanguage;
-    const matchesTag = selectedTag === 'all' || project.tags.includes(selectedTag);
-    
-    return matchesSearch && matchesLanguage && matchesTag;
-  });
+      // Sort projects
+      switch (sortBy) {
+        case 'name':
+          filteredProjects.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+        case 'stars':
+          filteredProjects.sort((a, b) => b.stars - a.stars);
+          break;
+        case 'updated':
+        default:
+          filteredProjects.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+      }
 
-  if (isLoading) {
-    return (
-      <Layout>
-        <div className="p-6">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-muted rounded w-64"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-48 bg-muted rounded"></div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+      setProjects(filteredProjects);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      toast.error('Failed to load projects');
+      setProjects([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStar = async (projectId) => {
+    try {
+      await projectAPI.starProject(projectId);
+      setProjects(prev => prev.map(project => 
+        project.id === projectId 
+          ? { ...project, stars: project.stars + 1, isStarred: !project.isStarred }
+          : project
+      ));
+      toast.success('Project starred!');
+    } catch (error) {
+      console.error('Error starring project:', error);
+      toast.error('Failed to star project');
+    }
+  };
+
+  const handleFork = async (projectId) => {
+    try {
+      const response = await projectAPI.forkProject(projectId);
+      const forkedProject = response.data || response;
+      
+      setProjects(prev => [forkedProject, ...prev.map(p => 
+        p.id === projectId ? { ...p, forks: p.forks + 1 } : p
+      )]);
+      toast.success('Project forked successfully!');
+    } catch (error) {
+      console.error('Error forking project:', error);
+      toast.error('Failed to fork project');
+    }
+  };
+
+  const handleDelete = async (projectId) => {
+    if (window.confirm('Are you sure you want to delete this project?')) {
+      try {
+        await projectAPI.deleteProject(projectId);
+        setProjects(prev => prev.filter(p => p.id !== projectId));
+        toast.success('Project deleted successfully');
+      } catch (error) {
+        console.error('Error deleting project:', error);
+        toast.error('Failed to delete project');
+      }
+    }
+  };
+
+  const handleArchive = async (projectId) => {
+    try {
+      const project = projects.find(p => p.id === projectId);
+      await projectAPI.updateProject(projectId, { isArchived: !project.isArchived });
+      setProjects(prev => prev.map(project => 
+        project.id === projectId 
+          ? { ...project, isArchived: !project.isArchived }
+          : project
+      ));
+      toast.success(project.isArchived ? 'Project unarchived' : 'Project archived');
+    } catch (error) {
+      console.error('Error archiving project:', error);
+      toast.error('Failed to archive project');
+    }
+  };
+
+  const filteredProjects = projects.filter(project =>
+    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const filterOptions = [
+    { value: 'all', label: 'All Projects', icon: Folder },
+    { value: 'owned', label: 'My Projects', icon: Folder },
+    { value: 'starred', label: 'Starred', icon: Star },
+    { value: 'forked', label: 'Forked', icon: GitFork }
+  ];
 
   return (
-    <Layout>
-      <div className="p-6 space-y-6">
+    <div className="min-h-screen py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold">My Projects</h1>
-            <p className="text-muted-foreground">
-              Manage and explore your code projects
+            <h1 className="text-3xl font-bold text-white mb-2">Projects</h1>
+            <p className="text-dark-300">
+              Organize your code snippets into projects for better collaboration
             </p>
           </div>
-          <Button asChild>
-            <Link to="/projects/new">
-              <Plus className="h-4 w-4 mr-2" />
-              New Project
+          
+          <div className="mt-4 lg:mt-0">
+            <Link
+              to="/projects/new"
+              className="btn-primary flex items-center space-x-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>New Project</span>
             </Link>
-          </Button>
+          </div>
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Filter className="h-5 w-5 mr-2" />
-              Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search projects..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              
-              <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Language" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Languages</SelectItem>
-                  {languages.map((lang) => (
-                    <SelectItem key={lang} value={lang}>{lang}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        {/* Filters and Search */}
+        <div className="card mb-8">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-dark-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search projects..."
+                className="input-field pl-10 w-full"
+              />
+            </div>
 
-              <Select value={selectedTag} onValueChange={setSelectedTag}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Tag" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Tags</SelectItem>
-                  {tags.map((tag) => (
-                    <SelectItem key={tag} value={tag}>{tag}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Filter Tabs */}
+            <div className="flex space-x-1 bg-dark-800 rounded-lg p-1">
+              {filterOptions.map(option => {
+                const Icon = option.icon;
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => setFilterType(option.value)}
+                    className={`flex items-center space-x-1 px-3 py-2 rounded text-sm transition-colors ${
+                      filterType === option.value
+                        ? 'bg-primary-600 text-white'
+                        : 'text-dark-300 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{option.label}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'outline'}
-                  size="sm"
+            {/* Sort and View Options */}
+            <div className="flex items-center space-x-2">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="input-field min-w-[120px]"
+              >
+                <option value="updated">Last Updated</option>
+                <option value="name">Name</option>
+                <option value="stars">Stars</option>
+              </select>
+
+              <div className="flex items-center bg-dark-800 rounded-lg p-1">
+                <button
                   onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded ${
+                    viewMode === 'grid' 
+                      ? 'bg-primary-600 text-white' 
+                      : 'text-dark-400 hover:text-white'
+                  }`}
                 >
                   <Grid className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'outline'}
-                  size="sm"
+                </button>
+                <button
                   onClick={() => setViewMode('list')}
+                  className={`p-2 rounded ${
+                    viewMode === 'list' 
+                      ? 'bg-primary-600 text-white' 
+                      : 'text-dark-400 hover:text-white'
+                  }`}
                 >
                   <List className="h-4 w-4" />
-                </Button>
+                </button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Active Filters */}
-        {(searchTerm || selectedLanguage !== 'all' || selectedTag !== 'all') && (
-          <div className="flex flex-wrap gap-2">
-            {searchTerm && (
-              <Badge variant="secondary">
-                Search: {searchTerm}
-              </Badge>
-            )}
-            {selectedLanguage !== 'all' && (
-              <Badge variant="secondary">
-                Language: {selectedLanguage}
-              </Badge>
-            )}
-            {selectedTag !== 'all' && (
-              <Badge variant="secondary">
-                Tag: {selectedTag}
-              </Badge>
-            )}
           </div>
-        )}
 
-        {/* Projects Grid */}
-        <div className={`grid gap-6 ${
-          viewMode === 'grid' 
-            ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-            : 'grid-cols-1'
-        }`}>
-          {filteredProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
+          {/* Show Archived Toggle */}
+          <div className="mt-4 pt-4 border-t border-dark-700">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+                className="rounded border-dark-600 bg-dark-700 text-primary-600 focus:ring-primary-500"
+              />
+              <Archive className="h-4 w-4 text-dark-400" />
+              <span className="text-dark-300">Show archived projects</span>
+            </label>
+          </div>
         </div>
 
-        {filteredProjects.length === 0 && (
+        {/* Results Info */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="text-sm text-dark-400">
+            {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''} found
+          </div>
+        </div>
+
+        {/* Projects Grid/List */}
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <LoadingSpinner size="lg" text="Loading projects..." />
+          </div>
+        ) : filteredProjects.length > 0 ? (
+          <div className={
+            viewMode === 'grid' 
+              ? 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'
+              : 'space-y-6'
+          }>
+            {filteredProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onStar={handleStar}
+                onFork={handleFork}
+                onDelete={handleDelete}
+                onArchive={handleArchive}
+              />
+            ))}
+          </div>
+        ) : (
           <div className="text-center py-12">
-            <h3 className="text-lg font-semibold mb-2">No projects found</h3>
-            <p className="text-muted-foreground mb-4">
-              Try adjusting your filters or create a new project.
+            <div className="w-24 h-24 bg-dark-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Folder className="h-12 w-12 text-dark-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">No projects found</h3>
+            <p className="text-dark-400 mb-6">
+              {searchQuery || filterType !== 'all' 
+                ? 'Try adjusting your search criteria'
+                : 'Create your first project to organize your code snippets!'
+              }
             </p>
-            <Button asChild>
-              <Link to="/projects/new">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Project
-              </Link>
-            </Button>
+            <Link to="/projects/new" className="btn-primary">
+              Create Your First Project
+            </Link>
           </div>
         )}
       </div>
-    </Layout>
+    </div>
   );
 };
 

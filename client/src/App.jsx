@@ -1,61 +1,96 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useAuthStore } from '@/stores/authStore';
-import { LoginForm } from '@/components/auth/LoginForm';
-import { RegisterForm } from '@/components/auth/RegisterForm';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import Navbar from './components/layout/Navbar';
+import Home from './pages/Home';
+import Login from './pages/Auth/Login';
+import Register from './pages/Auth/Register';
 import Dashboard from './pages/Dashboard';
-import Projects from './pages/Projects';
-import NewProject from './pages/NewProject';
-import ProjectDetail from './pages/ProjectDetail';
-import Starred from './pages/Starred';
-import Collaborations from './pages/Collaborations';
-import Recent from './pages/Recent';
-import Explore from './pages/Explore';
-import Documentation from './pages/Documentation';
+import Create from './pages/Create';
+import Collaborate from './pages/Collaborate';
+import Profile from './pages/Profile';
 import Settings from './pages/Settings';
-import UserProfile from './pages/UserProfile';
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
+import Projects from './pages/Projects';
+import CreateProject from './components/features/CreateProject';
+import ProjectDetail from './components/features/ProjectDetail';
+import CollaborationRoom from './components/features/CollaborationRoom';
+import ModerationPanel from './components/features/ModerationPanel';
+import LoadingSpinner from './components/common/LoadingSpinner';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Loading..." />
+      </div>
+    );
+  }
+  
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
-// Public Route Component (redirect to dashboard if authenticated)
+// Public Route Component (redirects to dashboard if authenticated)
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
-  return !isAuthenticated ? <>{children}</> : <Navigate to="/dashboard" replace />;
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Loading..." />
+      </div>
+    );
+  }
+  
+  return !isAuthenticated ? children : <Navigate to="/dashboard" replace />;
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+// Moderation Route Component (only for moderators/admins)
+const ModerationRoute = ({ children }) => {
+  const { user, isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Loading..." />
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (user?.role !== 'moderator' && user?.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return children;
+};
+
+function AppContent() {
+  return (
+    <div className="min-h-screen bg-white dark:bg-dark-950 transition-colors">
+      <Navbar />
+      <main>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={
             <PublicRoute>
-              <Index />
+              <Home />
             </PublicRoute>
           } />
           <Route path="/login" element={
             <PublicRoute>
-              <LoginForm />
+              <Login />
             </PublicRoute>
           } />
           <Route path="/register" element={
             <PublicRoute>
-              <RegisterForm />
+              <Register />
             </PublicRoute>
           } />
           
@@ -65,6 +100,11 @@ const App = () => (
               <Dashboard />
             </ProtectedRoute>
           } />
+          <Route path="/create" element={
+            <ProtectedRoute>
+              <Create />
+            </ProtectedRoute>
+          } />
           <Route path="/projects" element={
             <ProtectedRoute>
               <Projects />
@@ -72,56 +112,86 @@ const App = () => (
           } />
           <Route path="/projects/new" element={
             <ProtectedRoute>
-              <NewProject />
+              <CreateProject />
             </ProtectedRoute>
           } />
-          <Route path="/projects/:id" element={
+          <Route path="/project/:id" element={
             <ProtectedRoute>
               <ProjectDetail />
             </ProtectedRoute>
           } />
-          <Route path="/starred" element={
+          <Route path="/collaborate" element={
             <ProtectedRoute>
-              <Starred />
+              <Collaborate />
             </ProtectedRoute>
           } />
-          <Route path="/collaborations" element={
+          <Route path="/collaborate/:roomId" element={
             <ProtectedRoute>
-              <Collaborations />
+              <CollaborationRoom />
             </ProtectedRoute>
           } />
-          <Route path="/recent" element={
+          <Route path="/profile" element={
             <ProtectedRoute>
-              <Recent />
+              <Profile />
             </ProtectedRoute>
           } />
-          <Route path="/explore" element={
-            <ProtectedRoute>
-              <Explore />
-            </ProtectedRoute>
-          } />
-          <Route path="/docs" element={
-            <ProtectedRoute>
-              <Documentation />
-            </ProtectedRoute>
-          } />
+          <Route path="/profile/:username" element={<Profile />} />
           <Route path="/settings" element={
             <ProtectedRoute>
               <Settings />
             </ProtectedRoute>
           } />
-          <Route path="/users/:username" element={
-            <ProtectedRoute>
-              <UserProfile />
-            </ProtectedRoute>
+          
+          {/* Moderation Routes */}
+          <Route path="/moderation" element={
+            <ModerationRoute>
+              <ModerationPanel />
+            </ModerationRoute>
           } />
           
-          {/* Catch-all route */}
-          <Route path="*" element={<NotFound />} />
+          {/* Fallback Route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+      </main>
+      
+      {/* Toast Notifications */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: 'rgb(30 41 59)', // dark-800
+            color: 'rgb(248 250 252)', // dark-50
+            border: '1px solid rgb(71 85 105)', // dark-600
+          },
+          success: {
+            iconTheme: {
+              primary: 'rgb(34 197 94)', // green-500
+              secondary: 'rgb(248 250 252)',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: 'rgb(239 68 68)', // red-500
+              secondary: 'rgb(248 250 252)',
+            },
+          },
+        }}
+      />
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ThemeProvider>
+    </Router>
+  );
+}
 
 export default App;

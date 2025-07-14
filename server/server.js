@@ -15,14 +15,14 @@ const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const projectRoutes = require("./routes/projects");
 const codeRoutes = require("./routes/code");
-const notificationRoutes = require("./routes/notifications");
+const notificationRoutes = require("./routes/notification");
 const fileRoutes = require("./routes/files"); // Add this line
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
     methods: ["GET", "POST"],
   },
 });

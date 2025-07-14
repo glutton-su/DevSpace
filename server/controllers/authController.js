@@ -1,9 +1,9 @@
 const bcrypt = require("bcryptjs");
 const { User, UserStats } = require("../models");
 const {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyToken,
+  genAccess: generateAccessToken,
+  genRefresh: generateRefreshToken,
+  verify: verifyToken,
 } = require("../utils/jwt");
 
 // Store refresh tokens (in production, use Redis or database)
@@ -79,13 +79,19 @@ const login = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({ 
+        success: false,
+        message: "Invalid credentials" 
+      });
     }
 
     // Check password using the model method
     const isMatch = await user.validatePassword(password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({ 
+        success: false,
+        message: "Invalid credentials" 
+      });
     }
 
     // Generate tokens
@@ -99,23 +105,29 @@ const login = async (req, res) => {
     await user.update({ lastLogin: new Date() });
 
     res.json({
+      success: true,           // ✅ Add success property
       message: "Login successful",
-      accessToken,
+      token: accessToken,      // ✅ Change accessToken to token
       refreshToken,
       user: {
         id: user.id,
         username: user.username,
         email: user.email,
         fullName: user.fullName,
+        name: user.fullName,   // ✅ Add name field for frontend
         role: user.role,
         themePreference: user.themePreference,
+        avatar: user.avatarUrl, // ✅ Map avatarUrl to avatar
         avatarUrl: user.avatarUrl,
         stats: user.stats,
       },
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
+    });
   }
 };
 
@@ -262,8 +274,9 @@ const forgotPassword = async (req, res) => {
     }
 
     // Generate reset token (expires in 1 hour)
-    const resetToken = generateToken(
+    const resetToken = require("jsonwebtoken").sign(
       { userId: user.id, type: "password_reset" },
+      process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 

@@ -1,528 +1,749 @@
 import { useState } from 'react';
-import { Layout } from '@/components/layout/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { useAuthStore } from '@/stores/authStore';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '../context/AuthContext';
 import { 
-  Settings as SettingsIcon, 
   User, 
+  Mail, 
+  Lock, 
   Bell, 
+  Globe, 
   Shield, 
-  Palette,
-  Upload,
   Trash2,
+  Save,
   Eye,
-  EyeOff
+  EyeOff,
+  Github,
+  Twitter,
+  Linkedin,
+  MapPin,
+  Camera
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-export const Settings = () => {
-  const { user, updateUser } = useAuthStore();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+const Settings = () => {
+  const { user, updateUser } = useAuth();
+  const [activeTab, setActiveTab] = useState('profile');
+  const [loading, setLoading] = useState(false);
 
-  // Profile settings
-  const [profileData, setProfileData] = useState({
+  const tabs = [
+    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'account', label: 'Account', icon: Mail },
+    { id: 'security', label: 'Security', icon: Lock },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'privacy', label: 'Privacy', icon: Shield },
+    { id: 'danger', label: 'Danger Zone', icon: Trash2 }
+  ];
+
+  return (
+    <div className="min-h-screen py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
+          <p className="text-dark-300">Manage your account settings and preferences</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="card">
+              <nav className="space-y-1">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                        activeTab === tab.id
+                          ? 'bg-primary-600 text-white'
+                          : 'text-dark-300 hover:text-white hover:bg-dark-800'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="lg:col-span-3">
+            {activeTab === 'profile' && <ProfileSettings user={user} updateUser={updateUser} />}
+            {activeTab === 'account' && <AccountSettings user={user} updateUser={updateUser} />}
+            {activeTab === 'security' && <SecuritySettings />}
+            {activeTab === 'notifications' && <NotificationSettings />}
+            {activeTab === 'privacy' && <PrivacySettings />}
+            {activeTab === 'danger' && <DangerZone />}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Profile Settings Component
+const ProfileSettings = ({ user, updateUser }) => {
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
     username: user?.username || '',
-    email: user?.email || '',
-    bio: 'Passionate developer building amazing projects',
-    location: 'San Francisco, CA',
-    website: 'https://myportfolio.dev',
-    company: 'Tech Corp'
+    bio: user?.bio || '',
+    location: user?.location || '',
+    website: user?.website || '',
+    github: user?.github || '',
+    twitter: user?.twitter || '',
+    linkedin: user?.linkedin || ''
   });
+  const [loading, setLoading] = useState(false);
 
-  // Notification settings
-  const [notifications, setNotifications] = useState({
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      updateUser(formData);
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      toast.error('Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAvatarChange = () => {
+    toast.info('Avatar upload feature coming soon!');
+  };
+
+  return (
+    <div className="card">
+      <h2 className="text-xl font-bold text-white mb-6">Profile Information</h2>
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Avatar */}
+        <div className="flex items-center space-x-6">
+          <img
+            src={user?.avatar}
+            alt={user?.name}
+            className="w-20 h-20 rounded-full object-cover"
+          />
+          <div>
+            <button
+              type="button"
+              onClick={handleAvatarChange}
+              className="btn-secondary flex items-center space-x-2"
+            >
+              <Camera className="h-4 w-4" />
+              <span>Change Avatar</span>
+            </button>
+            <p className="text-xs text-dark-400 mt-1">
+              JPG, PNG or GIF. Max size 2MB.
+            </p>
+          </div>
+        </div>
+
+        {/* Basic Info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-dark-200 mb-2">
+              Full Name
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              className="input-field w-full"
+              placeholder="Enter your full name"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-dark-200 mb-2">
+              Username
+            </label>
+            <input
+              type="text"
+              value={formData.username}
+              onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+              className="input-field w-full"
+              placeholder="Enter your username"
+            />
+          </div>
+        </div>
+
+        {/* Bio */}
+        <div>
+          <label className="block text-sm font-medium text-dark-200 mb-2">
+            Bio
+          </label>
+          <textarea
+            value={formData.bio}
+            onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+            className="input-field w-full h-24 resize-none"
+            placeholder="Tell us about yourself..."
+          />
+        </div>
+
+        {/* Location & Website */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-dark-200 mb-2">
+              Location
+            </label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-dark-400" />
+              <input
+                type="text"
+                value={formData.location}
+                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                className="input-field w-full pl-10"
+                placeholder="City, Country"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-dark-200 mb-2">
+              Website
+            </label>
+            <div className="relative">
+              <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-dark-400" />
+              <input
+                type="url"
+                value={formData.website}
+                onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                className="input-field w-full pl-10"
+                placeholder="https://yourwebsite.com"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Social Links */}
+        <div>
+          <h3 className="text-lg font-semibold text-white mb-4">Social Links</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-dark-200 mb-2">
+                GitHub
+              </label>
+              <div className="relative">
+                <Github className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-dark-400" />
+                <input
+                  type="text"
+                  value={formData.github}
+                  onChange={(e) => setFormData(prev => ({ ...prev, github: e.target.value }))}
+                  className="input-field w-full pl-10"
+                  placeholder="github-username"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-dark-200 mb-2">
+                Twitter
+              </label>
+              <div className="relative">
+                <Twitter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-dark-400" />
+                <input
+                  type="text"
+                  value={formData.twitter}
+                  onChange={(e) => setFormData(prev => ({ ...prev, twitter: e.target.value }))}
+                  className="input-field w-full pl-10"
+                  placeholder="twitter-handle"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-dark-200 mb-2">
+                LinkedIn
+              </label>
+              <div className="relative">
+                <Linkedin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-dark-400" />
+                <input
+                  type="text"
+                  value={formData.linkedin}
+                  onChange={(e) => setFormData(prev => ({ ...prev, linkedin: e.target.value }))}
+                  className="input-field w-full pl-10"
+                  placeholder="linkedin-profile"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Submit */}
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary flex items-center space-x-2 disabled:opacity-50"
+          >
+            <Save className="h-4 w-4" />
+            <span>{loading ? 'Saving...' : 'Save Changes'}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+// Account Settings Component
+const AccountSettings = ({ user, updateUser }) => {
+  const [formData, setFormData] = useState({
+    email: user?.email || '',
+    currentEmail: user?.email || ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      updateUser({ email: formData.email });
+      toast.success('Email updated successfully!');
+    } catch (error) {
+      toast.error('Failed to update email');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="card">
+        <h2 className="text-xl font-bold text-white mb-6">Account Information</h2>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-dark-200 mb-2">
+              Current Email
+            </label>
+            <input
+              type="email"
+              value={formData.currentEmail}
+              disabled
+              className="input-field w-full opacity-50"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-dark-200 mb-2">
+              New Email
+            </label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              className="input-field w-full"
+              placeholder="Enter new email address"
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary disabled:opacity-50"
+            >
+              {loading ? 'Updating...' : 'Update Email'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Security Settings Component
+const SecuritySettings = () => {
+  const [formData, setFormData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (formData.newPassword !== formData.confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // Simulate password change
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast.success('Password updated successfully!');
+      setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (error) {
+      toast.error('Failed to update password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="card">
+        <h2 className="text-xl font-bold text-white mb-6">Change Password</h2>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-dark-200 mb-2">
+              Current Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPasswords.current ? 'text' : 'password'}
+                value={formData.currentPassword}
+                onChange={(e) => setFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                className="input-field w-full pr-10"
+                placeholder="Enter current password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-dark-400 hover:text-white"
+              >
+                {showPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-dark-200 mb-2">
+              New Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPasswords.new ? 'text' : 'password'}
+                value={formData.newPassword}
+                onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
+                className="input-field w-full pr-10"
+                placeholder="Enter new password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-dark-400 hover:text-white"
+              >
+                {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-dark-200 mb-2">
+              Confirm New Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPasswords.confirm ? 'text' : 'password'}
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                className="input-field w-full pr-10"
+                placeholder="Confirm new password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-dark-400 hover:text-white"
+              >
+                {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary disabled:opacity-50"
+            >
+              {loading ? 'Updating...' : 'Update Password'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div className="card">
+        <h2 className="text-xl font-bold text-white mb-6">Two-Factor Authentication</h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-dark-200 mb-1">Secure your account with 2FA</p>
+            <p className="text-sm text-dark-400">Add an extra layer of security to your account</p>
+          </div>
+          <button className="btn-secondary">
+            Enable 2FA
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Notification Settings Component
+const NotificationSettings = () => {
+  const [settings, setSettings] = useState({
     emailNotifications: true,
-    pushNotifications: true,
-    projectUpdates: true,
+    pushNotifications: false,
+    snippetLikes: true,
+    snippetComments: true,
+    newFollowers: true,
     collaborationInvites: true,
     weeklyDigest: false,
     securityAlerts: true
   });
 
-  // Privacy settings
-  const [privacy, setPrivacy] = useState({
-    profileVisibility: 'public',
-    showEmail: false,
-    showActivity: true,
-    allowIndexing: true
-  });
-
-  // Theme and appearance
-  const [appearance, setAppearance] = useState({
-    theme: user?.themePreference || 'light',
-    editorTheme: 'vs-light',
-    fontSize: 'medium',
-    compactMode: false
-  });
-
-  const handleProfileSave = async () => {
-    setIsLoading(true);
-    try {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      updateUser({
-        ...(user || {}),
-        username: profileData.username,
-        email: profileData.email
-      });
-      toast({
-        title: 'Profile Updated',
-        description: 'Your profile has been successfully updated.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update profile. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleToggle = (key) => {
+    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+    toast.success('Notification preferences updated');
   };
 
-  const handleNotificationSave = () => {
-    toast({
-      title: 'Notifications Updated',
-      description: 'Your notification preferences have been saved.',
-    });
-  };
-
-  const handlePrivacySave = () => {
-    toast({
-      title: 'Privacy Settings Updated',
-      description: 'Your privacy settings have been saved.',
-    });
-  };
-
-  const handleAppearanceSave = () => {
-    updateUser({
-      ...(user || {}),
-      themePreference: appearance.theme
-    });
-    toast({
-      title: 'Appearance Updated',
-      description: 'Your appearance settings have been saved.',
-    });
-  };
-
-  const handleDeleteAccount = () => {
-    toast({
-      title: 'Account Deletion',
-      description: 'This feature is not available in the demo.',
-      variant: 'destructive',
-    });
-  };
+  const NotificationToggle = ({ label, description, value, onChange }) => (
+    <div className="flex items-center justify-between py-3">
+      <div>
+        <p className="text-dark-200 font-medium">{label}</p>
+        <p className="text-sm text-dark-400">{description}</p>
+      </div>
+      <label className="relative inline-flex items-center cursor-pointer">
+        <input
+          type="checkbox"
+          checked={value}
+          onChange={onChange}
+          className="sr-only peer"
+        />
+        <div className="w-11 h-6 bg-dark-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+      </label>
+    </div>
+  );
 
   return (
-    <Layout>
-      <div className="p-6 space-y-6">
-        <div className="flex items-center">
-          <SettingsIcon className="h-8 w-8 mr-3 text-gray-500" />
+    <div className="space-y-6">
+      <div className="card">
+        <h2 className="text-xl font-bold text-white mb-6">Notification Preferences</h2>
+        
+        <div className="space-y-1 divide-y divide-dark-700">
+          <NotificationToggle
+            label="Email Notifications"
+            description="Receive notifications via email"
+            value={settings.emailNotifications}
+            onChange={() => handleToggle('emailNotifications')}
+          />
+          
+          <NotificationToggle
+            label="Push Notifications"
+            description="Receive push notifications in your browser"
+            value={settings.pushNotifications}
+            onChange={() => handleToggle('pushNotifications')}
+          />
+          
+          <NotificationToggle
+            label="Snippet Likes"
+            description="When someone likes your snippets"
+            value={settings.snippetLikes}
+            onChange={() => handleToggle('snippetLikes')}
+          />
+          
+          <NotificationToggle
+            label="Snippet Comments"
+            description="When someone comments on your snippets"
+            value={settings.snippetComments}
+            onChange={() => handleToggle('snippetComments')}
+          />
+          
+          <NotificationToggle
+            label="New Followers"
+            description="When someone follows you"
+            value={settings.newFollowers}
+            onChange={() => handleToggle('newFollowers')}
+          />
+          
+          <NotificationToggle
+            label="Collaboration Invites"
+            description="When someone invites you to collaborate"
+            value={settings.collaborationInvites}
+            onChange={() => handleToggle('collaborationInvites')}
+          />
+          
+          <NotificationToggle
+            label="Weekly Digest"
+            description="Weekly summary of platform activity"
+            value={settings.weeklyDigest}
+            onChange={() => handleToggle('weeklyDigest')}
+          />
+          
+          <NotificationToggle
+            label="Security Alerts"
+            description="Important security notifications"
+            value={settings.securityAlerts}
+            onChange={() => handleToggle('securityAlerts')}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Privacy Settings Component
+const PrivacySettings = () => {
+  const [settings, setSettings] = useState({
+    profileVisibility: 'public',
+    showEmail: false,
+    showLocation: true,
+    allowDirectMessages: true,
+    showOnlineStatus: false,
+    indexBySearchEngines: true
+  });
+
+  const handleToggle = (key) => {
+    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+    toast.success('Privacy settings updated');
+  };
+
+  const PrivacyToggle = ({ label, description, value, onChange }) => (
+    <div className="flex items-center justify-between py-3">
+      <div>
+        <p className="text-dark-200 font-medium">{label}</p>
+        <p className="text-sm text-dark-400">{description}</p>
+      </div>
+      <label className="relative inline-flex items-center cursor-pointer">
+        <input
+          type="checkbox"
+          checked={value}
+          onChange={onChange}
+          className="sr-only peer"
+        />
+        <div className="w-11 h-6 bg-dark-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+      </label>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="card">
+        <h2 className="text-xl font-bold text-white mb-6">Privacy Settings</h2>
+        
+        <div className="space-y-4">
           <div>
-            <h1 className="text-3xl font-bold">Settings</h1>
-            <p className="text-muted-foreground">
-              Manage your account settings and preferences
-            </p>
+            <label className="block text-sm font-medium text-dark-200 mb-2">
+              Profile Visibility
+            </label>
+            <select
+              value={settings.profileVisibility}
+              onChange={(e) => setSettings(prev => ({ ...prev, profileVisibility: e.target.value }))}
+              className="input-field w-full"
+            >
+              <option value="public">Public - Anyone can view your profile</option>
+              <option value="registered">Registered Users - Only logged-in users</option>
+              <option value="private">Private - Only you can view your profile</option>
+            </select>
           </div>
         </div>
-
-        <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="privacy">Privacy</TabsTrigger>
-            <TabsTrigger value="appearance">Appearance</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="profile" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <User className="h-5 w-5 mr-2" />
-                  Profile Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Avatar Section */}
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage src={user?.avatar} />
-                    <AvatarFallback className="text-xl">
-                      {user?.username?.[0]?.toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="space-y-2">
-                    <Button variant="outline" size="sm">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Change Avatar
-                    </Button>
-                    <p className="text-sm text-muted-foreground">
-                      JPG, PNG or GIF. Max size 2MB.
-                    </p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Profile Form */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      value={profileData.username}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, username: e.target.value }))}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={profileData.email}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      value={profileData.location}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, location: e.target.value }))}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="website">Website</Label>
-                    <Input
-                      id="website"
-                      value={profileData.website}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, website: e.target.value }))}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="company">Company</Label>
-                    <Input
-                      id="company"
-                      value={profileData.company}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, company: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={profileData.bio}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
-                    rows={3}
-                  />
-                </div>
-
-                <Button onClick={handleProfileSave} disabled={isLoading}>
-                  {isLoading ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="notifications" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Bell className="h-5 w-5 mr-2" />
-                  Notification Preferences
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Receive notifications via email</p>
-                    </div>
-                    <Switch
-                      checked={notifications.emailNotifications}
-                      onCheckedChange={(checked) => 
-                        setNotifications(prev => ({ ...prev, emailNotifications: checked }))
-                      }
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Push Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Receive browser push notifications</p>
-                    </div>
-                    <Switch
-                      checked={notifications.pushNotifications}
-                      onCheckedChange={(checked) => 
-                        setNotifications(prev => ({ ...prev, pushNotifications: checked }))
-                      }
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Project Updates</Label>
-                      <p className="text-sm text-muted-foreground">Notifications when projects are updated</p>
-                    </div>
-                    <Switch
-                      checked={notifications.projectUpdates}
-                      onCheckedChange={(checked) => 
-                        setNotifications(prev => ({ ...prev, projectUpdates: checked }))
-                      }
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Collaboration Invites</Label>
-                      <p className="text-sm text-muted-foreground">Notifications for collaboration invitations</p>
-                    </div>
-                    <Switch
-                      checked={notifications.collaborationInvites}
-                      onCheckedChange={(checked) => 
-                        setNotifications(prev => ({ ...prev, collaborationInvites: checked }))
-                      }
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Weekly Digest</Label>
-                      <p className="text-sm text-muted-foreground">Weekly summary of your activity</p>
-                    </div>
-                    <Switch
-                      checked={notifications.weeklyDigest}
-                      onCheckedChange={(checked) => 
-                        setNotifications(prev => ({ ...prev, weeklyDigest: checked }))
-                      }
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Security Alerts</Label>
-                      <p className="text-sm text-muted-foreground">Important security notifications</p>
-                    </div>
-                    <Switch
-                      checked={notifications.securityAlerts}
-                      onCheckedChange={(checked) => 
-                        setNotifications(prev => ({ ...prev, securityAlerts: checked }))
-                      }
-                    />
-                  </div>
-                </div>
-
-                <Button onClick={handleNotificationSave}>
-                  Save Notification Settings
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="privacy" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Shield className="h-5 w-5 mr-2" />
-                  Privacy Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Profile Visibility</Label>
-                    <Select 
-                      value={privacy.profileVisibility} 
-                      onValueChange={(value) => setPrivacy(prev => ({ ...prev, profileVisibility: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="public">
-                          <div className="flex items-center">
-                            <Eye className="h-4 w-4 mr-2" />
-                            Public - Anyone can see your profile
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="private">
-                          <div className="flex items-center">
-                            <EyeOff className="h-4 w-4 mr-2" />
-                            Private - Only you can see your profile
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Show Email Address</Label>
-                      <p className="text-sm text-muted-foreground">Display your email on your public profile</p>
-                    </div>
-                    <Switch
-                      checked={privacy.showEmail}
-                      onCheckedChange={(checked) => 
-                        setPrivacy(prev => ({ ...prev, showEmail: checked }))
-                      }
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Show Activity</Label>
-                      <p className="text-sm text-muted-foreground">Show your recent activity on your profile</p>
-                    </div>
-                    <Switch
-                      checked={privacy.showActivity}
-                      onCheckedChange={(checked) => 
-                        setPrivacy(prev => ({ ...prev, showActivity: checked }))
-                      }
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Allow Search Engine Indexing</Label>
-                      <p className="text-sm text-muted-foreground">Allow search engines to index your profile</p>
-                    </div>
-                    <Switch
-                      checked={privacy.allowIndexing}
-                      onCheckedChange={(checked) => 
-                        setPrivacy(prev => ({ ...prev, allowIndexing: checked }))
-                      }
-                    />
-                  </div>
-                </div>
-
-                <Button onClick={handlePrivacySave}>
-                  Save Privacy Settings
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Danger Zone */}
-            <Card className="border-red-200 dark:border-red-800">
-              <CardHeader>
-                <CardTitle className="flex items-center text-red-600 dark:text-red-400">
-                  <Trash2 className="h-5 w-5 mr-2" />
-                  Danger Zone
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Delete Account</h4>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Once you delete your account, there is no going back. Please be certain.
-                    </p>
-                    <Button variant="destructive" onClick={handleDeleteAccount}>
-                      Delete Account
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="appearance" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Palette className="h-5 w-5 mr-2" />
-                  Appearance & Theme
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Theme</Label>
-                    <Select 
-                      value={appearance.theme} 
-                      onValueChange={(value) => setAppearance(prev => ({ ...prev, theme: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="light">Light</SelectItem>
-                        <SelectItem value="dark">Dark</SelectItem>
-                        <SelectItem value="system">System</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Label>Editor Theme</Label>
-                    <Select 
-                      value={appearance.editorTheme} 
-                      onValueChange={(value) => setAppearance(prev => ({ ...prev, editorTheme: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="vs-light">Light</SelectItem>
-                        <SelectItem value="vs-dark">Dark</SelectItem>
-                        <SelectItem value="hc-black">High Contrast</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Font Size</Label>
-                    <Select 
-                      value={appearance.fontSize} 
-                      onValueChange={(value) => setAppearance(prev => ({ ...prev, fontSize: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="small">Small</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="large">Large</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Compact Mode</Label>
-                      <p className="text-sm text-muted-foreground">Use compact layout for better screen utilization</p>
-                    </div>
-                    <Switch
-                      checked={appearance.compactMode}
-                      onCheckedChange={(checked) => 
-                        setAppearance(prev => ({ ...prev, compactMode: checked }))
-                      }
-                    />
-                  </div>
-                </div>
-
-                <Button onClick={handleAppearanceSave}>
-                  Save Appearance Settings
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        
+        <div className="mt-6 space-y-1 divide-y divide-dark-700">
+          <PrivacyToggle
+            label="Show Email Address"
+            description="Display your email on your public profile"
+            value={settings.showEmail}
+            onChange={() => handleToggle('showEmail')}
+          />
+          
+          <PrivacyToggle
+            label="Show Location"
+            description="Display your location on your profile"
+            value={settings.showLocation}
+            onChange={() => handleToggle('showLocation')}
+          />
+          
+          <PrivacyToggle
+            label="Allow Direct Messages"
+            description="Let other users send you direct messages"
+            value={settings.allowDirectMessages}
+            onChange={() => handleToggle('allowDirectMessages')}
+          />
+          
+          <PrivacyToggle
+            label="Show Online Status"
+            description="Show when you're online to other users"
+            value={settings.showOnlineStatus}
+            onChange={() => handleToggle('showOnlineStatus')}
+          />
+          
+          <PrivacyToggle
+            label="Search Engine Indexing"
+            description="Allow search engines to index your profile"
+            value={settings.indexBySearchEngines}
+            onChange={() => handleToggle('indexBySearchEngines')}
+          />
+        </div>
       </div>
-    </Layout>
+    </div>
+  );
+};
+
+// Danger Zone Component
+const DangerZone = () => {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  return (
+    <div className="space-y-6">
+      <div className="card border-red-500/20">
+        <h2 className="text-xl font-bold text-red-400 mb-6">Danger Zone</h2>
+        
+        <div className="space-y-4">
+          <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
+            <h3 className="text-lg font-semibold text-red-400 mb-2">Delete Account</h3>
+            <p className="text-dark-300 mb-4">
+              Once you delete your account, there is no going back. Please be certain.
+            </p>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              Delete Account
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="card max-w-md w-full border-red-500/20">
+            <h2 className="text-xl font-bold text-red-400 mb-4">Delete Account</h2>
+            <p className="text-dark-300 mb-6">
+              Are you absolutely sure? This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  toast.error('Account deletion is not available in demo mode');
+                  setShowDeleteModal(false);
+                }}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
