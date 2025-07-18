@@ -24,7 +24,7 @@ const connectDatabase = async () => {
     console.log("Connected to MySQL database via Sequelize");
     
     if (process.env.NODE_ENV === "development") {
-      await sequelize.sync({ alter: true });
+      await sequelize.sync();
       console.log("Database synchronized");
     }
   } catch (error) {
