@@ -7,6 +7,9 @@ const {
   updateCodeSnippet,
   deleteCodeSnippet,
   getLanguageStats,
+  shareCodeSnippet,
+  getPublicCodeSnippet,
+  updateSnippetVisibility,
 } = require("../controllers/codeController");
 const { auth } = require("../middleware/auth");
 const { validate } = require("../middleware/validation");
@@ -38,11 +41,20 @@ router.get("/project/:projectId", getCodeSnippets);
 // Get code snippet by ID
 router.get("/:id", getCodeSnippetById);
 
+// Get public code snippet by ID
+router.get("/public/:id", getPublicCodeSnippet);
+
 // Update code snippet
 router.put("/:id", auth, updateCodeSnippet);
 
 // Delete code snippet
 router.delete("/:id", auth, deleteCodeSnippet);
+
+// Share code snippet (update visibility)
+router.patch("/:id/share", auth, shareCodeSnippet);
+
+// Update snippet visibility
+router.patch("/:id/visibility", auth, updateSnippetVisibility);
 
 // Get language statistics for a project
 router.get("/project/:projectId/languages", getLanguageStats);

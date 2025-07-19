@@ -33,6 +33,11 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING(500),
         field: "file_path",
       },
+      isPublic: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        field: "is_public",
+      },
     },
     {
       tableName: "code_snippets",

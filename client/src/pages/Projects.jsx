@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { projectAPI } from '../services/api';
 import ProjectCard from '../components/features/ProjectCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { 
@@ -33,65 +34,16 @@ const Projects = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      // Mock projects data
-      const mockProjects = [
-        {
-          id: 1,
-          name: 'React Component Library',
-          description: 'A comprehensive library of reusable React components with TypeScript support and Storybook documentation.',
-          owner: {
-            id: user?.id,
-            username: user?.username,
-            name: user?.name,
-            avatar: user?.avatar
-          },
-          languages: ['javascript', 'typescript', 'css'],
-          tags: ['react', 'components', 'ui', 'typescript'],
-          stars: 45,
-          forks: 12,
-          views: 234,
-          snippetsCount: 28,
-          collaborators: 3,
-          isPrivate: false,
-          isArchived: false,
-          allowCollaboration: true,
-          template: 'react',
-          createdAt: '2024-01-10T00:00:00Z',
-          updatedAt: '2024-01-15T12:00:00Z'
-        },
-        {
-          id: 2,
-          name: 'Python ML Algorithms',
-          description: 'Implementation of various machine learning algorithms from scratch using Python and NumPy.',
-          owner: {
-            id: 2,
-            username: 'pythonista',
-            name: 'Sarah Chen',
-            avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=50&h=50&dpr=2'
-          },
-          languages: ['python'],
-          tags: ['machine-learning', 'algorithms', 'numpy', 'data-science'],
-          stars: 67,
-          forks: 23,
-          views: 456,
-          snippetsCount: 15,
-          collaborators: 2,
-          isPrivate: false,
-          isArchived: false,
-          allowCollaboration: true,
-          template: 'python'
-        }
-      ];
       const params = {};
       if (filterType !== 'all') params.filter = filterType;
       if (showArchived) params.includeArchived = true;
       
       const response = await projectAPI.getProjects(params);
-      let filteredProjects = response.data || response;
+      let filteredProjects = response.projects || response.data || response;
 
-      // Apply filters
+      // Apply client-side filters if needed
       if (filterType === 'owned') {
-        filteredProjects = filteredProjects.filter(p => p.owner.id === user?.id);
+        filteredProjects = filteredProjects.filter(p => p.owner?.id === user?.id);
       } else if (filterType === 'starred') {
         // This would be handled by backend with user's starred projects
         filteredProjects = filteredProjects.filter(p => p.isStarred);
@@ -108,14 +60,14 @@ const Projects = () => {
       // Sort projects
       switch (sortBy) {
         case 'name':
-          filteredProjects.sort((a, b) => a.name.localeCompare(b.name));
+          filteredProjects.sort((a, b) => a.title.localeCompare(b.title));
           break;
         case 'stars':
-          filteredProjects.sort((a, b) => b.stars - a.stars);
+          filteredProjects.sort((a, b) => b.starCount - a.starCount);
           break;
         case 'updated':
         default:
-          filteredProjects.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+          filteredProjects.sort((a, b) => new Date(b.updated_at || b.updatedAt) - new Date(a.updated_at || a.updatedAt));
       }
 
       setProjects(filteredProjects);
@@ -133,7 +85,7 @@ const Projects = () => {
       await projectAPI.starProject(projectId);
       setProjects(prev => prev.map(project => 
         project.id === projectId 
-          ? { ...project, stars: project.stars + 1, isStarred: !project.isStarred }
+          ? { ...project, starCount: project.starCount + 1, isStarred: !project.isStarred }
           : project
       ));
       toast.success('Project starred!');
@@ -146,10 +98,10 @@ const Projects = () => {
   const handleFork = async (projectId) => {
     try {
       const response = await projectAPI.forkProject(projectId);
-      const forkedProject = response.data || response;
+      const forkedProject = response.project || response.data || response;
       
       setProjects(prev => [forkedProject, ...prev.map(p => 
-        p.id === projectId ? { ...p, forks: p.forks + 1 } : p
+        p.id === projectId ? { ...p, forkCount: p.forkCount + 1 } : p
       )]);
       toast.success('Project forked successfully!');
     } catch (error) {
@@ -188,9 +140,9 @@ const Projects = () => {
   };
 
   const filteredProjects = projects.filter(project =>
-    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+    (project.tags && project.tags.some(tag => tag.name.toLowerCase().includes(searchQuery.toLowerCase())))
   );
 
   const filterOptions = [

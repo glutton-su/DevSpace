@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { snippetAPI } from '../services/api';
+import { snippetAPI, projectAPI } from '../services/api';
 import CodeEditor from '../components/common/CodeEditor';
 import { Upload, Code, Save, Eye, Globe, Lock, Tag, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -113,6 +113,23 @@ const Create = () => {
     }));
   };
 
+  const createDefaultProject = async () => {
+    try {
+      const projectData = {
+        title: 'My Snippets',
+        description: 'Personal code snippets collection',
+        isPublic: formData.isPublic,
+        isCollaborative: formData.allowCollaboration
+      };
+      
+      const result = await projectAPI.createProject(projectData);
+      return result.project.id;
+    } catch (error) {
+      console.error('Error creating default project:', error);
+      throw new Error('Failed to create project for snippet');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -128,7 +145,20 @@ const Create = () => {
 
     try {
       setLoading(true);
-      const result = await snippetAPI.createSnippet(formData);
+      
+      // Create a default project for the snippet
+      const projectId = await createDefaultProject();
+      
+      // Prepare snippet data
+      const snippetData = {
+        projectId: projectId,
+        title: formData.title,
+        content: formData.code,
+        language: formData.language,
+        filePath: uploadedFile ? uploadedFile.name : null
+      };
+      
+      const result = await snippetAPI.createSnippet(snippetData);
       const snippet = result.data || result;
       toast.success('Code snippet created successfully!');
       

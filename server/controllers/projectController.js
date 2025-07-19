@@ -64,7 +64,7 @@ const getProjects = async (req, res) => {
       search,
       tags,
       language,
-      sortBy = "createdAt",
+      sortBy = "created_at",
       order = "DESC",
     } = req.query;
 
@@ -96,6 +96,9 @@ const getProjects = async (req, res) => {
       });
     }
 
+    console.log("About to query projects with whereClause:", whereClause);
+    console.log("Include array:", includeArray);
+
     const { count, rows: projects } = await Project.findAndCountAll({
       where: whereClause,
       include: includeArray,
@@ -104,6 +107,8 @@ const getProjects = async (req, res) => {
       offset: parseInt(offset),
       distinct: true,
     });
+
+    console.log("Query completed. Count:", count, "Projects:", projects.length);
 
     // Filter by tags if provided
     let filteredProjects = projects;

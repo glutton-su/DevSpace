@@ -278,6 +278,118 @@ const getLanguageStats = async (req, res) => {
   }
 };
 
+const shareCodeSnippet = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isPublic } = req.body;
+
+    const codeSnippet = await CodeSnippet.findByPk(id, {
+      include: [{ model: Project, as: "project" }],
+    });
+
+    if (!codeSnippet) {
+      return res.status(404).json({ message: "Code snippet not found" });
+    }
+
+    // Check if user has edit access
+    const hasEditAccess =
+      codeSnippet.project.userId === req.user.id ||
+      (await ProjectCollaborator.findOne({
+        where: {
+          projectId: codeSnippet.projectId,
+          userId: req.user.id,
+          role: { [Op.in]: ["admin", "editor"] },
+        },
+      }));
+
+    if (!hasEditAccess) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    await codeSnippet.update({ isPublic });
+
+    res.json({
+      message: "Code snippet visibility updated successfully",
+      codeSnippet,
+    });
+  } catch (error) {
+    console.error("Share code snippet error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getPublicCodeSnippet = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const codeSnippet = await CodeSnippet.findOne({
+      where: { id, isPublic: true },
+      include: [
+        {
+          model: Project,
+          as: "project",
+          include: [
+            {
+              model: User,
+              as: "owner",
+              attributes: ["id", "username", "avatarUrl"],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!codeSnippet) {
+      return res.status(404).json({ message: "Public code snippet not found" });
+    }
+
+    res.json({ codeSnippet });
+  } catch (error) {
+    console.error("Get public code snippet error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const updateSnippetVisibility = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isPublic } = req.body;
+
+    const codeSnippet = await CodeSnippet.findByPk(id, {
+      include: [{ model: Project, as: "project" }],
+    });
+
+    if (!codeSnippet) {
+      return res.status(404).json({ message: "Code snippet not found" });
+    }
+
+    // Check if user has edit access
+    const hasEditAccess =
+      codeSnippet.project.userId === req.user.id ||
+      (await ProjectCollaborator.findOne({
+        where: {
+          projectId: codeSnippet.projectId,
+          userId: req.user.id,
+          role: { [Op.in]: ["admin", "editor"] },
+        },
+      }));
+
+    if (!hasEditAccess) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    await codeSnippet.update({ isPublic });
+
+    res.json({
+      message: "Code snippet visibility updated successfully",
+      codeSnippet,
+    });
+  } catch (error) {
+    console.error("Update snippet visibility error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   createCodeSnippet,
   getCodeSnippets,
@@ -285,4 +397,7 @@ module.exports = {
   updateCodeSnippet,
   deleteCodeSnippet,
   getLanguageStats,
+  shareCodeSnippet,
+  getPublicCodeSnippet,
+  updateSnippetVisibility,
 };
