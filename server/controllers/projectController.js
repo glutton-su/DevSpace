@@ -66,10 +66,27 @@ const getProjects = async (req, res) => {
       language,
       sortBy = "created_at",
       order = "DESC",
+      userId,
+      status,
     } = req.query;
 
     const offset = (page - 1) * limit;
-    const whereClause = { isPublic: true };
+    const whereClause = {};
+
+    // Status filter (public/private)
+    if (status === 'private') {
+      whereClause.isPublic = false;
+    } else if (status === 'public') {
+      whereClause.isPublic = true;
+    }
+
+    // User filter
+    if (userId) {
+      whereClause.userId = userId;
+    } else if (!status || status === 'public') {
+      // Default: only show public projects if not filtering by user
+      whereClause.isPublic = true;
+    }
 
     // Search functionality
     if (search) {
@@ -96,9 +113,6 @@ const getProjects = async (req, res) => {
       });
     }
 
-    console.log("About to query projects with whereClause:", whereClause);
-    console.log("Include array:", includeArray);
-
     const { count, rows: projects } = await Project.findAndCountAll({
       where: whereClause,
       include: includeArray,
@@ -107,8 +121,6 @@ const getProjects = async (req, res) => {
       offset: parseInt(offset),
       distinct: true,
     });
-
-    console.log("Query completed. Count:", count, "Projects:", projects.length);
 
     // Filter by tags if provided
     let filteredProjects = projects;
@@ -459,6 +471,67 @@ const forkProject = async (req, res) => {
   }
 };
 
+const addCollaborator = async (req, res) => {
+  try {
+    const { id } = req.params; // project id
+    const { userId, role } = req.body;
+    const project = await Project.findByPk(id);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+    // Only owner or admin collaborator can add
+    if (project.userId !== req.user.id) {
+      const adminCollab = await ProjectCollaborator.findOne({
+        where: { projectId: id, userId: req.user.id, role: "admin" },
+      });
+      if (!adminCollab) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+    }
+    // Prevent duplicate
+    const [collab, created] = await ProjectCollaborator.findOrCreate({
+      where: { projectId: id, userId },
+      defaults: { projectId: id, userId, role: role || "viewer" },
+    });
+    if (!created) {
+      return res.status(400).json({ message: "User is already a collaborator" });
+    }
+    res.json({ message: "Collaborator added successfully", collaborator: collab });
+  } catch (error) {
+    console.error("Add collaborator error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const removeCollaborator = async (req, res) => {
+  try {
+    const { id } = req.params; // project id
+    const { userId } = req.body;
+    const project = await Project.findByPk(id);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+    // Only owner or admin collaborator can remove
+    if (project.userId !== req.user.id) {
+      const adminCollab = await ProjectCollaborator.findOne({
+        where: { projectId: id, userId: req.user.id, role: "admin" },
+      });
+      if (!adminCollab) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+    }
+    const collab = await ProjectCollaborator.findOne({ where: { projectId: id, userId } });
+    if (!collab) {
+      return res.status(404).json({ message: "Collaborator not found" });
+    }
+    await collab.destroy();
+    res.json({ message: "Collaborator removed successfully" });
+  } catch (error) {
+    console.error("Remove collaborator error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   createProject,
   getProjects,
@@ -468,4 +541,6 @@ module.exports = {
   starProject,
   unstarProject,
   forkProject,
+  addCollaborator,
+  removeCollaborator,
 };

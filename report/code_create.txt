@@ -1,0 +1,4 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   358  100   262  100    96   9105   3336 --:--:-- --:--:-- --:--:-- 12785
+{"message":"Code snippet created successfully","codeSnippet":{"isPublic":false,"id":2,"projectId":2,"title":"API Test Snippet","content":"console.log(123);","language":"javascript","updated_at":"2025-07-21T12:46:31.265Z","created_at":"2025-07-21T12:46:31.265Z"}}

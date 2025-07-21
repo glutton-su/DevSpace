@@ -38,8 +38,8 @@ const register = async (req, res) => {
     await UserStats.create({ userId: user.id });
 
     // Generate tokens
-    const accessToken = generateAccessToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
     // Store refresh token
     refreshTokens.add(refreshToken);
@@ -95,8 +95,8 @@ const login = async (req, res) => {
     }
 
     // Generate tokens
-    const accessToken = generateAccessToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
     // Store refresh token
     refreshTokens.add(refreshToken);

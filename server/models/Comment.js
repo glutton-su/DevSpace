@@ -16,8 +16,13 @@ module.exports = (sequelize) => {
       },
       projectId: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
         field: "project_id",
+      },
+      codeSnippetId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: "code_snippet_id",
       },
       content: {
         type: DataTypes.TEXT,
@@ -44,6 +49,10 @@ module.exports = (sequelize) => {
     Comment.belongsTo(models.Project, {
       foreignKey: "projectId",
       as: "project",
+    });
+    Comment.belongsTo(models.CodeSnippet, {
+      foreignKey: "codeSnippetId",
+      as: "codeSnippet",
     });
   };
 

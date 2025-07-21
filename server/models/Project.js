@@ -50,6 +50,11 @@ module.exports = (sequelize) => {
         allowNull: true,
         field: "forked_from",
       },
+      forkedFromSnippet: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: "forked_from_snippet",
+      },
     },
     {
       tableName: "projects",
@@ -92,6 +97,10 @@ module.exports = (sequelize) => {
     Project.hasMany(models.Project, {
       foreignKey: "forkedFrom",
       as: "forks",
+    });
+    Project.belongsTo(models.CodeSnippet, {
+      foreignKey: "forkedFromSnippet",
+      as: "originalSnippet",
     });
     Project.hasMany(models.File, { 
     foreignKey: "projectId",

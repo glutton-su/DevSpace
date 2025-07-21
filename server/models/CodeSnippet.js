@@ -38,6 +38,16 @@ module.exports = (sequelize) => {
         defaultValue: false,
         field: "is_public",
       },
+      forkedFromSnippet: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: "forked_from_snippet",
+      },
+      forkedFromProject: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: "forked_from_project",
+      },
     },
     {
       tableName: "code_snippets",
@@ -51,6 +61,23 @@ module.exports = (sequelize) => {
     CodeSnippet.belongsTo(models.Project, {
       foreignKey: "projectId",
       as: "project",
+    });
+    CodeSnippet.belongsTo(models.CodeSnippet, {
+      foreignKey: "forkedFromSnippet",
+      as: "originalSnippet",
+    });
+    CodeSnippet.belongsTo(models.Project, {
+      foreignKey: "forkedFromProject",
+      as: "originalProject",
+    });
+    CodeSnippet.hasMany(models.CodeSnippet, {
+      foreignKey: "forkedFromSnippet",
+      as: "forks",
+    });
+    CodeSnippet.belongsToMany(models.Tag, {
+      through: "SnippetTag",
+      foreignKey: "codeSnippetId",
+      as: "tags",
     });
   };
 

@@ -10,6 +10,7 @@ const Notification = require("./Notification");
 const Comment = require("./Comment");
 const UserStats = require("./UserStats");
 const File = require("./File");
+const SnippetTag = sequelize.define("SnippetTag", {}, { tableName: "snippet_tags", timestamps: false });
 
 // Initialize models
 const models = {
@@ -24,6 +25,7 @@ const models = {
   Comment: Comment(sequelize),
   UserStats: UserStats(sequelize),
   File: File(sequelize),
+  SnippetTag,
 };
 
 // Define associations

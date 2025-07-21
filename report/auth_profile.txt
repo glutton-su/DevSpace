@@ -1,0 +1,4 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   453  100   453    0     0  55385      0 --:--:-- --:--:-- --:--:-- 56625
+{"user":{"id":4,"username":"apitestuser","email":"apitestuser@example.com","fullName":"API Test User","bio":null,"avatarUrl":"/static/default-avatar-robot.png","themePreference":"light","role":"user","isVerified":false,"created_at":"2025-07-21T12:38:00.000Z","updated_at":"2025-07-21T12:38:00.000Z","stats":{"userId":4,"totalProjects":0,"totalStarsReceived":0,"totalForksReceived":0,"mostUsedLanguage":null,"lastCalculated":"2025-07-21T12:38:00.000Z"}}}

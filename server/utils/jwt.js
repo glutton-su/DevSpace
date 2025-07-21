@@ -1,12 +1,12 @@
 const jwt = require("jsonwebtoken");
 
-const genAccess = (id) =>
-  jwt.sign({ userId: id, type: "access" }, process.env.JWT_SECRET, {
+const genAccess = (user) =>
+  jwt.sign({ userId: user.id, username: user.username, role: user.role, type: "access" }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_ACCESS_EXPIRE || "15m"
   });
 
-const genRefresh = (id) =>
-  jwt.sign({ userId: id, type: "refresh" }, process.env.JWT_SECRET, {
+const genRefresh = (user) =>
+  jwt.sign({ userId: user.id, username: user.username, role: user.role, type: "refresh" }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRE || "7d"
   });
 

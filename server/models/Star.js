@@ -16,8 +16,13 @@ module.exports = (sequelize) => {
       },
       projectId: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
         field: "project_id",
+      },
+      codeSnippetId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: "code_snippet_id",
       },
       starredAt: {
         type: DataTypes.DATE,
@@ -31,7 +36,7 @@ module.exports = (sequelize) => {
       indexes: [
         {
           unique: true,
-          fields: ["user_id", "project_id"],
+          fields: ["user_id", "project_id", "code_snippet_id"],
         },
       ],
     }
@@ -45,6 +50,10 @@ module.exports = (sequelize) => {
     Star.belongsTo(models.Project, {
       foreignKey: "projectId",
       as: "project",
+    });
+    Star.belongsTo(models.CodeSnippet, {
+      foreignKey: "codeSnippetId",
+      as: "codeSnippet",
     });
   };
 

@@ -43,6 +43,9 @@ router.get("/:id", getCodeSnippetById);
 
 // Get public code snippet by ID
 router.get("/public/:id", getPublicCodeSnippet);
+router.get("/public", (req, res) => {
+  require("../controllers/codeController").getAllPublicCodeSnippets(req, res);
+});
 
 // Update code snippet
 router.put("/:id", auth, updateCodeSnippet);

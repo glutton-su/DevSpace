@@ -58,4 +58,9 @@ router.delete("/:id/star", auth, unstarProject);
 // Fork project
 router.post("/:id/fork", auth, forkProject);
 
+// Add collaborator
+router.post("/:id/collaborators", auth, require("../controllers/projectController").addCollaborator);
+// Remove collaborator
+router.delete("/:id/collaborators", auth, require("../controllers/projectController").removeCollaborator);
+
 module.exports = router;

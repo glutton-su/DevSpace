@@ -42,6 +42,7 @@ module.exports = (sequelize) => {
       avatarUrl: {
         type: DataTypes.STRING(255),
         field: "avatar_url",
+        defaultValue: "/static/default-avatar-robot.png",
       },
       themePreference: {
         type: DataTypes.ENUM("light", "dark"),

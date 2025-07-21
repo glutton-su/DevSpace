@@ -1,0 +1,4 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   659  100   548  100   111   4846    981 --:--:-- --:--:-- --:--:--  5780100   659  100   548  100   111   4824    977 --:--:-- --:--:-- --:--:--  5780
+{"message":"User registered successfully","accessToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsInR5cGUiOiJhY2Nlc3MiLCJpYXQiOjE3NTMxMDE0ODAsImV4cCI6MTc1MzEwMjM4MH0.ZqvQHOTbp2pe2r_iMvlhKFsg9M1ftwCeIagusftPGtA","refreshToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsInR5cGUiOiJyZWZyZXNoIiwiaWF0IjoxNzUzMTAxNDgwLCJleHAiOjE3NTM3MDYyODB9.X1L1dyKBfQRBxl_1eedyYftdjkPVdGNgINLTO1_QveU","user":{"id":4,"username":"apitestuser","email":"apitestuser@example.com","fullName":"API Test User","role":"user","themePreference":"light"}}

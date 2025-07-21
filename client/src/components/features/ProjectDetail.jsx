@@ -19,6 +19,7 @@ import {
   Share2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { fileAPI } from '../../services/api';
 
 const ProjectDetail = () => {
   const { id } = useParams();
@@ -28,10 +29,12 @@ const ProjectDetail = () => {
   const [snippets, setSnippets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isStarred, setIsStarred] = useState(false);
+  const [files, setFiles] = useState([]);
 
   useEffect(() => {
     fetchProject();
     fetchProjectSnippets();
+    fetchFiles();
   }, [id]);
 
   const fetchProject = async () => {
@@ -128,6 +131,15 @@ export default Button;`,
     }
   };
 
+  const fetchFiles = async () => {
+    try {
+      const response = await fileAPI.getProjectFiles(id);
+      setFiles(response.files || response.data || []);
+    } catch (e) {
+      setFiles([]);
+    }
+  };
+
   const handleStar = async () => {
     try {
       setIsStarred(!isStarred);
@@ -216,6 +228,26 @@ export default Button;`,
               </div>
 
               <p className="text-dark-300 mb-4 leading-relaxed">{project.description}</p>
+
+              {files.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-semibold text-white mb-2">Project Files</h3>
+                  <ul className="list-disc list-inside text-dark-200">
+                    {files.map(file => (
+                      <li key={file.id}>
+                        <a
+                          href={file.url || file.path || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary-400 hover:underline"
+                        >
+                          {file.name || file.filename || 'File'}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Tags */}
               <div className="flex flex-wrap gap-2 mb-4">

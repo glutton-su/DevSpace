@@ -1,0 +1,4 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100    59  100    47  100    12   4520   1154 --:--:-- --:--:-- --:--:--  5900
+{"message":"Collaborator removed successfully"}

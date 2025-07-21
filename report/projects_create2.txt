@@ -1,0 +1,4 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   527  100   436  100    91  18238   3806 --:--:-- --:--:-- --:--:-- 22913
+{"message":"Project created successfully","project":{"id":3,"userId":4,"title":"API Test Project 2","description":"Project for endpoint testing","isPublic":true,"isCollaborative":false,"starCount":0,"forkCount":0,"forkedFrom":null,"forkedFromSnippet":null,"created_at":"2025-07-21T12:45:44.000Z","updated_at":"2025-07-21T12:45:44.000Z","owner":{"id":4,"username":"apitestuser","avatarUrl":"/static/default-avatar-robot.png"},"tags":[]}}

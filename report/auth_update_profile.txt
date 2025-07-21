@@ -1,0 +1,4 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   414  100   358  100    56  12962   2027 --:--:-- --:--:-- --:--:-- 15333
+{"message":"Profile updated successfully","user":{"id":4,"username":"apitestuser","email":"apitestuser@example.com","fullName":"API Test User Updated","bio":"Updated bio","avatarUrl":"/static/default-avatar-robot.png","themePreference":"light","role":"user","isVerified":false,"created_at":"2025-07-21T12:38:00.000Z","updated_at":"2025-07-21T12:39:41.000Z"}}

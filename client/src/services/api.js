@@ -63,8 +63,13 @@ export const authService = {
 
 // Projects API
 export const projectAPI = {
+  getAllProjects: async () => {
+    const response = await authAPI.get('/projects/');
+    return response.data;
+  },
+
   getProjects: async (params = {}) => {
-    const response = await authAPI.get('/projects', { params });
+    const response = await authAPI.get('/projects/', { params });
     return response.data;
   },
 
@@ -279,6 +284,13 @@ export const collaborationAPI = {
     // Placeholder for leaving collaboration room
     return { data: { success: true } };
   }
+};
+
+export const tagAPI = {
+  getAllTags: async () => {
+    const response = await authAPI.get('/tag');
+    return response.data;
+  },
 };
 
 export default authAPI;

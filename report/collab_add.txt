@@ -1,0 +1,4 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   177  100   149  100    28   5165    970 --:--:-- --:--:-- --:--:--  6321
+{"message":"Collaborator added successfully","collaborator":{"addedAt":"2025-07-21T12:47:49.705Z","id":2,"projectId":"2","userId":2,"role":"editor"}}

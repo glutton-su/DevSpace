@@ -42,3 +42,18 @@ exports.listReports = async (req, res, next) => {
     next(e);
   }
 };
+
+exports.updateUserRole = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    const { role } = req.body;
+    if (!role || !["user", "moderator", "admin"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+    await user.update({ role });
+    res.json({ message: `User role updated to ${role}` });
+  } catch (e) {
+    next(e);
+  }
+};

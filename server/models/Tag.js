@@ -36,6 +36,11 @@ module.exports = (sequelize) => {
       foreignKey: "tagId",
       as: "projects",
     });
+    Tag.belongsToMany(models.CodeSnippet, {
+      through: "SnippetTag",
+      foreignKey: "tagId",
+      as: "codeSnippets",
+    });
   };
 
   return Tag;

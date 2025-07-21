@@ -24,8 +24,9 @@ const connectDatabase = async () => {
     console.log("Connected to MySQL database via Sequelize");
     
     if (process.env.NODE_ENV === "development") {
+      console.warn("[WARNING] Forcing database sync: all tables will be dropped and recreated.");
       await sequelize.sync();
-      console.log("Database synchronized");
+      console.log("Database force-synchronized (all tables dropped and recreated)");
     }
   } catch (error) {
     console.error("Database connection failed:", error);

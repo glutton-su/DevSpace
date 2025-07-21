@@ -1,0 +1,1 @@
+[SUCCESS] Collaboration endpoints (add/remove collaborator) added to backend. Ready for testing.
