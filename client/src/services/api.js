@@ -149,6 +149,33 @@ export const snippetAPI = {
   getLanguageStats: async (projectId) => {
     const response = await authAPI.get(`/code/project/${projectId}/languages`);
     return response.data;
+  },
+
+  getCollaborativeSnippets: async (params = {}) => {
+    const response = await authAPI.get('/code/collaborative', { params });
+    return response.data;
+  },
+
+  // User-specific snippet collections
+  getUserOwnedSnippets: async (params = {}) => {
+    const response = await authAPI.get('/code/user/owned', { params });
+    return response.data;
+  },
+
+  getUserStarredSnippets: async (params = {}) => {
+    const response = await authAPI.get('/code/user/starred', { params });
+    return response.data;
+  },
+
+  getUserForkedSnippets: async (params = {}) => {
+    const response = await authAPI.get('/code/user/forked', { params });
+    return response.data;
+  },
+
+  // Public snippets
+  getPublicSnippets: async (params = {}) => {
+    const response = await authAPI.get('/code/public/all', { params });
+    return response.data;
   }
 };
 

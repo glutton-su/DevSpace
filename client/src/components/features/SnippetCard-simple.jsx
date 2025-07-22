@@ -9,11 +9,15 @@ const SnippetCard = ({ snippet, onLike, onStar, onFork, showFullCode = false }) 
   const navigate = useNavigate();
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch {
+      return 'Unknown';
+    }
   };
 
   const getLanguageColor = (language) => {
@@ -32,7 +36,21 @@ const SnippetCard = ({ snippet, onLike, onStar, onFork, showFullCode = false }) 
     return colors[language] || 'bg-gray-600';
   };
 
-  const previewCode = showFullCode ? (snippet.content || snippet.code) : (snippet.content || snippet.code)?.slice(0, 300) + ((snippet.content || snippet.code)?.length > 300 ? '...' : '');
+  // Safe access to snippet properties
+  const title = snippet.title || 'Untitled Snippet';
+  const description = snippet.description || '';
+  const language = snippet.language || 'text';
+  const code = snippet.code || snippet.content || '// No code available';
+  const views = snippet.views || 0;
+  const createdAt = snippet.createdAt || snippet.created_at || new Date().toISOString();
+
+  // Author information - handle both User and author fields
+  const authorData = snippet.author || snippet.User || {};
+  const authorName = authorData.name || authorData.username || 'Unknown User';
+  const authorUsername = authorData.username || 'unknown';
+  const authorAvatar = authorData.avatar || '/default-avatar.svg';
+
+  const previewCode = showFullCode ? code : code.slice(0, 300) + (code.length > 300 ? '...' : '');
 
   const handleCardClick = (e) => {
     // Don't navigate if clicking on interactive elements
@@ -40,13 +58,10 @@ const SnippetCard = ({ snippet, onLike, onStar, onFork, showFullCode = false }) 
       return;
     }
     
-    // Navigate to project detail if snippet belongs to a project
-    if (snippet.projectId) {
-      navigate(`/project/${snippet.projectId}`);
-    } else {
-      navigate(`/snippet/${snippet.id}`);
-    }
+    // Always navigate to snippet detail
+    navigate(`/snippet/${snippet.id}`);
   };
+
   return (
     <div 
       className="card hover:shadow-2xl transition-all duration-300 group cursor-pointer"
@@ -56,16 +71,18 @@ const SnippetCard = ({ snippet, onLike, onStar, onFork, showFullCode = false }) 
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2 group-hover:text-primary-400 transition-colors">
-            {snippet.title}
+            {title}
           </h3>
-          <p className="text-dark-300 text-sm mb-3 line-clamp-2">
-            {snippet.description}
-          </p>
+          {description && (
+            <p className="text-dark-300 text-sm mb-3 line-clamp-2">
+              {description}
+            </p>
+          )}
         </div>
         
         <div className="flex items-center space-x-1 ml-4 flex-shrink-0">
-          <span className={`px-2 py-1 rounded-full text-xs font-medium text-white ${getLanguageColor(snippet.language)}`}>
-            {snippet.language}
+          <span className={`px-2 py-1 rounded-full text-xs font-medium text-white ${getLanguageColor(language)}`}>
+            {language}
           </span>
         </div>
       </div>
@@ -73,25 +90,29 @@ const SnippetCard = ({ snippet, onLike, onStar, onFork, showFullCode = false }) 
       {/* Author Info */}
       <div className="flex items-center space-x-3 mb-4">
         <img
-          src={(snippet.author?.avatar || snippet.project?.owner?.avatarUrl) || '/default-avatar.png'}
-          alt={(snippet.author?.name || snippet.project?.owner?.fullName || snippet.project?.owner?.username) || 'User'}
+          src={authorAvatar}
+          alt={authorName}
           className="h-8 w-8 rounded-full object-cover"
+          onError={(e) => {
+            e.target.src = '/default-avatar.svg';
+          }}
         />
         <div className="flex-1 min-w-0">
           <Link 
-            to={`/profile/${snippet.author?.username || snippet.project?.owner?.username}`}
+            to={`/profile/${authorUsername}`}
             className="text-dark-200 hover:text-white transition-colors text-sm font-medium"
+            onClick={(e) => e.stopPropagation()}
           >
-            {snippet.author?.name || snippet.project?.owner?.fullName || snippet.project?.owner?.username}
+            {authorName}
           </Link>
           <div className="flex items-center text-xs text-dark-400 space-x-3">
             <span className="flex items-center space-x-1">
               <Calendar className="h-3 w-3" />
-              <span>{formatDate(snippet.createdAt || snippet.created_at)}</span>
+              <span>{formatDate(createdAt)}</span>
             </span>
             <span className="flex items-center space-x-1">
               <Eye className="h-3 w-3" />
-              <span>{snippet.views || 0}</span>
+              <span>{views}</span>
             </span>
           </div>
         </div>
@@ -100,7 +121,7 @@ const SnippetCard = ({ snippet, onLike, onStar, onFork, showFullCode = false }) 
       {/* Code Preview */}
       <div className="relative mb-4 rounded-lg overflow-hidden bg-dark-900 border border-dark-700">
         <SyntaxHighlighter
-          language={snippet.language}
+          language={language}
           style={vscDarkPlus}
           customStyle={{
             margin: 0,
@@ -114,7 +135,7 @@ const SnippetCard = ({ snippet, onLike, onStar, onFork, showFullCode = false }) 
           {previewCode}
         </SyntaxHighlighter>
         
-        {!showFullCode && (snippet.content || snippet.code)?.length > 300 && (
+        {!showFullCode && code.length > 300 && (
           <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-dark-900 to-transparent flex items-end justify-center pb-1">
             <span className="text-xs text-primary-400 hover:text-primary-300 transition-colors">
               View full code
@@ -129,7 +150,7 @@ const SnippetCard = ({ snippet, onLike, onStar, onFork, showFullCode = false }) 
           {snippet.tags.map((tag, index) => (
             <span
               key={index}
-              className="px-2 py-1 bg-dark-800 text-dark-300 text-xs rounded-full"
+              className="px-2 py-1 bg-dark-800 text-dark-300 text-xs rounded-full cursor-pointer hover:bg-dark-700 transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 navigate(`/search?tag=${tag}`);

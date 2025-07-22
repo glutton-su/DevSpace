@@ -10,6 +10,16 @@ const {
   shareCodeSnippet,
   getPublicCodeSnippet,
   updateSnippetVisibility,
+  getPublicSnippets,
+  getUserOwnedSnippets,
+  getUserStarredSnippets,
+  getUserForkedSnippets,
+  toggleSnippetStar,
+  toggleSnippetLike,
+  forkCodeSnippet,
+  addSnippetCollaborator,
+  removeSnippetCollaborator,
+  getSnippetCollaborators,
 } = require("../controllers/codeController");
 const { auth } = require("../middleware/auth");
 const { validate } = require("../middleware/validation");
@@ -38,14 +48,22 @@ router.post(
 // Get code snippets for a project
 router.get("/project/:projectId", getCodeSnippets);
 
-// Get code snippet by ID
-router.get("/:id", getCodeSnippetById);
+// New snippet view routes (MUST come before /:id route)
+router.get("/public/all", getPublicSnippets); // Public snippets for dashboard
+router.get("/user/owned", auth, getUserOwnedSnippets); // User's own snippets
+router.get("/user/starred", auth, getUserStarredSnippets); // User's starred snippets
+router.get("/user/forked", auth, getUserForkedSnippets); // User's forked snippets
 
-// Get public code snippet by ID
-router.get("/public/:id", getPublicCodeSnippet);
+// Get public code snippets (legacy route)
 router.get("/public", (req, res) => {
   require("../controllers/codeController").getAllPublicCodeSnippets(req, res);
 });
+
+// Get public code snippet by ID
+router.get("/public/:id", getPublicCodeSnippet);
+
+// Get code snippet by ID (MUST come after specific routes)
+router.get("/:id", getCodeSnippetById);
 
 // Update code snippet
 router.put("/:id", auth, updateCodeSnippet);
@@ -59,7 +77,17 @@ router.patch("/:id/share", auth, shareCodeSnippet);
 // Update snippet visibility
 router.patch("/:id/visibility", auth, updateSnippetVisibility);
 
+// Star/Like/Fork functionality
+router.post("/:id/star", auth, require("../controllers/codeController").toggleSnippetStar);
+router.post("/:id/like", auth, require("../controllers/codeController").toggleSnippetLike);
+router.post("/:id/fork", auth, require("../controllers/codeController").forkCodeSnippet);
+
 // Get language statistics for a project
 router.get("/project/:projectId/languages", getLanguageStats);
+
+// Snippet collaboration routes
+router.get("/:id/collaborators", auth, getSnippetCollaborators);
+router.post("/:id/collaborators", auth, addSnippetCollaborator);
+router.delete("/:id/collaborators", auth, removeSnippetCollaborator);
 
 module.exports = router;

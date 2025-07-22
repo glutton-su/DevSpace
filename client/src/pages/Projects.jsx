@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { projectAPI } from '../services/api';
-import ProjectCard from '../components/features/ProjectCard';
+import { snippetAPI } from '../services/api';
+import SnippetCard from '../components/features/SnippetCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { 
   Plus, 
   Search, 
   Filter, 
-  Folder,
+  Code,
   Star,
   GitFork,
   Archive,
@@ -19,135 +19,166 @@ import toast from 'react-hot-toast';
 
 const Projects = () => {
   const { user } = useAuth();
-  const [projects, setProjects] = useState([]);
+  const [snippets, setSnippets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('all'); // 'all', 'owned', 'starred', 'forked'
+  const [filterType, setFilterType] = useState('owned'); // 'all', 'owned', 'starred', 'forked'
   const [sortBy, setSortBy] = useState('updated');
   const [viewMode, setViewMode] = useState('grid');
   const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
-    fetchProjects();
-  }, [filterType, sortBy, showArchived]);
+    fetchSnippets();
+  }, [filterType, sortBy, showArchived, searchQuery]);
 
-  const fetchProjects = async () => {
+  const fetchSnippets = async () => {
     try {
       setLoading(true);
       const params = {};
-      if (filterType !== 'all') params.filter = filterType;
+      if (searchQuery) params.search = searchQuery;
       if (showArchived) params.includeArchived = true;
       
-      const response = await projectAPI.getProjects(params);
-      let filteredProjects = response.projects || response.data || response;
+      let response;
+      switch (filterType) {
+        case 'owned':
+          response = await snippetAPI.getUserOwnedSnippets(params);
+          break;
+        case 'starred':
+          response = await snippetAPI.getUserStarredSnippets(params);
+          break;
+        case 'forked':
+          response = await snippetAPI.getUserForkedSnippets(params);
+          break;
+        case 'all':
+          response = await snippetAPI.getPublicSnippets(params);
+          break;
+        default:
+          response = await snippetAPI.getUserOwnedSnippets(params);
+      }
+      
+      let filteredSnippets = response.snippets || response.data || response;
 
-      // Apply client-side filters if needed
-      if (filterType === 'owned') {
-        filteredProjects = filteredProjects.filter(p => p.owner?.id === user?.id);
-      } else if (filterType === 'starred') {
-        // This would be handled by backend with user's starred projects
-        filteredProjects = filteredProjects.filter(p => p.isStarred);
-      } else if (filterType === 'forked') {
-        // This would be handled by backend with user's forked projects
-        filteredProjects = filteredProjects.filter(p => p.forkedFrom);
+      if (!Array.isArray(filteredSnippets)) {
+        filteredSnippets = [];
       }
 
-      // Show/hide archived
-      if (!showArchived) {
-        filteredProjects = filteredProjects.filter(p => !p.isArchived);
+      // Apply search filter (client-side backup if not handled by backend)
+      if (searchQuery) {
+        filteredSnippets = filteredSnippets.filter(snippet =>
+          snippet.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          snippet.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          snippet.language?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
       }
 
-      // Sort projects
+      // Sort snippets
       switch (sortBy) {
         case 'name':
-          filteredProjects.sort((a, b) => a.title.localeCompare(b.title));
+          filteredSnippets.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
           break;
         case 'stars':
-          filteredProjects.sort((a, b) => b.starCount - a.starCount);
+          filteredSnippets.sort((a, b) => (b.starCount || 0) - (a.starCount || 0));
           break;
         case 'updated':
         default:
-          filteredProjects.sort((a, b) => new Date(b.updated_at || b.updatedAt) - new Date(a.updated_at || a.updatedAt));
+          filteredSnippets.sort((a, b) => new Date(b.updated_at || b.updatedAt) - new Date(a.updated_at || a.updatedAt));
       }
 
-      setProjects(filteredProjects);
+      console.log('Setting snippets:', filteredSnippets.length, 'items');
+      setSnippets(filteredSnippets);
     } catch (error) {
-      console.error('Error fetching projects:', error);
-      toast.error('Failed to load projects');
-      setProjects([]);
+      console.error('Error fetching snippets:', error);
+      toast.error('Failed to load snippets');
+      setSnippets([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStar = async (projectId) => {
+  const handleStar = async (snippetId) => {
     try {
-      await projectAPI.starProject(projectId);
-      setProjects(prev => prev.map(project => 
-        project.id === projectId 
-          ? { ...project, starCount: project.starCount + 1, isStarred: !project.isStarred }
-          : project
+      await snippetAPI.toggleStar(snippetId);
+      setSnippets(prev => prev.map(snippet => 
+        snippet.id === snippetId 
+          ? { ...snippet, starCount: (snippet.starCount || 0) + (snippet.isStarred ? -1 : 1), isStarred: !snippet.isStarred }
+          : snippet
       ));
-      toast.success('Project starred!');
+      toast.success('Snippet starred!');
     } catch (error) {
-      console.error('Error starring project:', error);
-      toast.error('Failed to star project');
+      console.error('Error starring snippet:', error);
+      toast.error('Failed to star snippet');
     }
   };
 
-  const handleFork = async (projectId) => {
+  const handleLike = async (snippetId) => {
     try {
-      const response = await projectAPI.forkProject(projectId);
-      const forkedProject = response.project || response.data || response;
-      
-      setProjects(prev => [forkedProject, ...prev.map(p => 
-        p.id === projectId ? { ...p, forkCount: p.forkCount + 1 } : p
-      )]);
-      toast.success('Project forked successfully!');
+      await snippetAPI.toggleLike(snippetId);
+      setSnippets(prev => prev.map(snippet => 
+        snippet.id === snippetId 
+          ? { ...snippet, likeCount: (snippet.likeCount || 0) + (snippet.isLiked ? -1 : 1), isLiked: !snippet.isLiked }
+          : snippet
+      ));
+      toast.success('Snippet liked!');
     } catch (error) {
-      console.error('Error forking project:', error);
-      toast.error('Failed to fork project');
+      console.error('Error liking snippet:', error);
+      toast.error('Failed to like snippet');
     }
   };
 
-  const handleDelete = async (projectId) => {
-    if (window.confirm('Are you sure you want to delete this project?')) {
+  const handleFork = async (snippetId) => {
+    try {
+      const response = await snippetAPI.forkSnippet(snippetId);
+      const forkedSnippet = response.snippet || response.data || response;
+      
+      setSnippets(prev => [forkedSnippet, ...prev.map(s => 
+        s.id === snippetId ? { ...s, forkCount: (s.forkCount || 0) + 1 } : s
+      )]);
+      toast.success('Snippet forked successfully!');
+    } catch (error) {
+      console.error('Error forking snippet:', error);
+      toast.error('Failed to fork snippet');
+    }
+  };
+
+  const handleDelete = async (snippetId) => {
+    if (window.confirm('Are you sure you want to delete this snippet?')) {
       try {
-        await projectAPI.deleteProject(projectId);
-        setProjects(prev => prev.filter(p => p.id !== projectId));
-        toast.success('Project deleted successfully');
+        await snippetAPI.deleteSnippet(snippetId);
+        setSnippets(prev => prev.filter(s => s.id !== snippetId));
+        toast.success('Snippet deleted successfully');
       } catch (error) {
-        console.error('Error deleting project:', error);
-        toast.error('Failed to delete project');
+        console.error('Error deleting snippet:', error);
+        toast.error('Failed to delete snippet');
       }
     }
   };
 
-  const handleArchive = async (projectId) => {
+  const handleArchive = async (snippetId) => {
     try {
-      const project = projects.find(p => p.id === projectId);
-      await projectAPI.updateProject(projectId, { isArchived: !project.isArchived });
-      setProjects(prev => prev.map(project => 
-        project.id === projectId 
-          ? { ...project, isArchived: !project.isArchived }
-          : project
+      const snippet = snippets.find(s => s.id === snippetId);
+      await snippetAPI.updateSnippet(snippetId, { isArchived: !snippet.isArchived });
+      setSnippets(prev => prev.map(snippet => 
+        snippet.id === snippetId 
+          ? { ...snippet, isArchived: !snippet.isArchived }
+          : snippet
       ));
-      toast.success(project.isArchived ? 'Project unarchived' : 'Project archived');
+      toast.success(snippet.isArchived ? 'Snippet unarchived' : 'Snippet archived');
     } catch (error) {
-      console.error('Error archiving project:', error);
-      toast.error('Failed to archive project');
+      console.error('Error archiving snippet:', error);
+      toast.error('Failed to archive snippet');
     }
   };
 
-  const filteredProjects = projects.filter(project =>
-    project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (project.tags && project.tags.some(tag => tag.name.toLowerCase().includes(searchQuery.toLowerCase())))
+  const filteredSnippets = snippets.filter(snippet =>
+    snippet.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    snippet.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    snippet.language?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (snippet.tags && snippet.tags.some(tag => tag.name?.toLowerCase().includes(searchQuery.toLowerCase())))
   );
 
   const filterOptions = [
-    { value: 'all', label: 'All Projects', icon: Folder },
-    { value: 'owned', label: 'My Projects', icon: Folder },
+    { value: 'all', label: 'All Snippets', icon: Code },
+    { value: 'owned', label: 'My Snippets', icon: Code },
     { value: 'starred', label: 'Starred', icon: Star },
     { value: 'forked', label: 'Forked', icon: GitFork }
   ];
@@ -158,19 +189,19 @@ const Projects = () => {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Projects</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">My Snippets</h1>
             <p className="text-dark-300">
-              Organize your code snippets into projects for better collaboration
+              Manage and organize your code snippets
             </p>
           </div>
           
           <div className="mt-4 lg:mt-0">
             <Link
-              to="/projects/new"
+              to="/create"
               className="btn-primary flex items-center space-x-2"
             >
               <Plus className="h-4 w-4" />
-              <span>New Project</span>
+              <span>New Snippet</span>
             </Link>
           </div>
         </div>
@@ -258,7 +289,7 @@ const Projects = () => {
                 className="rounded border-dark-600 bg-dark-700 text-primary-600 focus:ring-primary-500"
               />
               <Archive className="h-4 w-4 text-dark-400" />
-              <span className="text-dark-300">Show archived projects</span>
+              <span className="text-dark-300">Show archived snippets</span>
             </label>
           </div>
         </div>
@@ -266,26 +297,27 @@ const Projects = () => {
         {/* Results Info */}
         <div className="flex items-center justify-between mb-6">
           <div className="text-sm text-dark-400">
-            {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''} found
+            {filteredSnippets.length} snippet{filteredSnippets.length !== 1 ? 's' : ''} found
           </div>
         </div>
 
-        {/* Projects Grid/List */}
+        {/* Snippets Grid/List */}
         {loading ? (
           <div className="flex justify-center py-12">
-            <LoadingSpinner size="lg" text="Loading projects..." />
+            <LoadingSpinner size="lg" text="Loading snippets..." />
           </div>
-        ) : filteredProjects.length > 0 ? (
+        ) : filteredSnippets.length > 0 ? (
           <div className={
             viewMode === 'grid' 
               ? 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'
               : 'space-y-6'
           }>
-            {filteredProjects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
+            {filteredSnippets.map((snippet) => (
+              <SnippetCard
+                key={snippet.id}
+                snippet={snippet}
                 onStar={handleStar}
+                onLike={handleLike}
                 onFork={handleFork}
                 onDelete={handleDelete}
                 onArchive={handleArchive}
@@ -295,17 +327,17 @@ const Projects = () => {
         ) : (
           <div className="text-center py-12">
             <div className="w-24 h-24 bg-dark-800 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Folder className="h-12 w-12 text-dark-600" />
+              <Code className="h-12 w-12 text-dark-600" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">No projects found</h3>
+            <h3 className="text-xl font-semibold text-white mb-2">No snippets found</h3>
             <p className="text-dark-400 mb-6">
               {searchQuery || filterType !== 'all' 
                 ? 'Try adjusting your search criteria'
-                : 'Create your first project to organize your code snippets!'
+                : 'Create your first snippet to get started!'
               }
             </p>
-            <Link to="/projects/new" className="btn-primary">
-              Create Your First Project
+            <Link to="/create" className="btn-primary">
+              Create Your First Snippet
             </Link>
           </div>
         )}

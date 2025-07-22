@@ -1,0 +1,159 @@
+const { DataTypes } = require("sequelize");
+const bcrypt = require("bcryptjs");
+
+module.exports = (sequelize) => {
+  const User = sequelize.define(
+    "User",
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      username: {
+        type: DataTypes.STRING(50),
+        allowNull: false,
+        unique: true,
+        validate: {
+          notEmpty: true,
+          len: [3, 50],
+          isAlphanumeric: true,
+        },
+      },
+      email: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        unique: true,
+        validate: {
+          notEmpty: true,
+          isEmail: true,
+        },
+      },
+      password: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+      },
+      firstName: {
+        type: DataTypes.STRING(100),
+        field: "first_name",
+      },
+      lastName: {
+        type: DataTypes.STRING(100),
+        field: "last_name",
+      },
+      avatarUrl: {
+        type: DataTypes.TEXT,
+        field: "avatar_url",
+      },
+      bio: {
+        type: DataTypes.TEXT,
+      },
+      location: {
+        type: DataTypes.STRING(255),
+      },
+      website: {
+        type: DataTypes.STRING(255),
+        validate: {
+          isUrl: true,
+        },
+      },
+      githubUsername: {
+        type: DataTypes.STRING(100),
+        field: "github_username",
+      },
+      twitterUsername: {
+        type: DataTypes.STRING(100),
+        field: "twitter_username",
+      },
+      linkedinUsername: {
+        type: DataTypes.STRING(100),
+        field: "linkedin_username",
+      },
+      isEmailVerified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        field: "is_email_verified",
+      },
+      lastLoginAt: {
+        type: DataTypes.DATE,
+        field: "last_login_at",
+      },
+      role: {
+        type: DataTypes.ENUM("user", "admin", "moderator"),
+        defaultValue: "user",
+      },
+      isSuspended: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        field: "is_suspended",
+      },
+    },
+    {
+      tableName: "users",
+      timestamps: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+      hooks: {
+        beforeCreate: async (user) => {
+          if (user.password) {
+            const saltRounds = 12;
+            user.password = await bcrypt.hash(user.password, saltRounds);
+          }
+        },
+        beforeUpdate: async (user) => {
+          if (user.changed("password")) {
+            const saltRounds = 12;
+            user.password = await bcrypt.hash(user.password, saltRounds);
+          }
+        },
+      },
+    }
+  );
+
+  User.prototype.validatePassword = async function (password) {
+    return await bcrypt.compare(password, this.password);
+  };
+
+  User.prototype.toJSON = function () {
+    const values = { ...this.dataValues };
+    delete values.password;
+    return values;
+  };
+
+  User.associate = (models) => {
+    User.hasMany(models.Project, {
+      foreignKey: "userId",
+      as: "projects",
+    });
+    User.hasMany(models.Star, {
+      foreignKey: "userId",
+      as: "stars",
+    });
+    User.hasMany(models.ProjectCollaborator, {
+      foreignKey: "userId",
+      as: "projectCollaborations",
+    });
+    User.hasMany(models.CodeSnippetCollaborator, {
+      foreignKey: "userId",
+      as: "snippetCollaborations",
+    });
+    User.hasMany(models.Notification, {
+      foreignKey: "userId",
+      as: "notifications",
+    });
+    User.hasMany(models.Comment, {
+      foreignKey: "userId",
+      as: "comments",
+    });
+    User.hasOne(models.UserStats, {
+      foreignKey: "userId",
+      as: "stats",
+    });
+    User.hasMany(models.File, { 
+      foreignKey: "userId",
+      as: "files",
+    });
+  };
+
+  return User;
+};

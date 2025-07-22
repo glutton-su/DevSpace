@@ -116,14 +116,14 @@ const Create = () => {
   const createDefaultProject = async () => {
     try {
       const projectData = {
-        title: 'My Snippets',
-        description: 'Personal code snippets collection',
+        title: `${formData.title} - Project`,
+        description: formData.description || 'Auto-generated project for snippet',
         isPublic: formData.isPublic,
         isCollaborative: formData.allowCollaboration
       };
       
       const result = await projectAPI.createProject(projectData);
-      return result.project.id;
+      return result.project?.id || result.id;
     } catch (error) {
       console.error('Error creating default project:', error);
       throw new Error('Failed to create project for snippet');

@@ -23,7 +23,11 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: [
+      process.env.CLIENT_URL || "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:3000"
+    ],
     methods: ["GET", "POST"],
   },
 });
@@ -32,7 +36,13 @@ const io = socketIo(server, {
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" } // Allow file serving
 }));
-app.use(cors());
+app.use(cors({
+  origin: [
+    process.env.CLIENT_URL || "http://localhost:5173",
+    "http://localhost:5174", 
+    "http://localhost:3000"
+  ]
+}));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 

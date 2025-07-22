@@ -68,7 +68,6 @@ const Profile = () => {
           followingCount: 89,
           starsReceived: 156,
           totalViews: 2840,
-          projectsCount: 5,
           contributionsCount: 42
         };
         setUser(mockUser);
@@ -126,7 +125,6 @@ const Profile = () => {
 
   const tabs = [
     { id: 'snippets', label: 'Snippets', count: user?.snippetsCount || 0 },
-    { id: 'projects', label: 'Projects', count: user?.projectsCount || 0 },
     { id: 'starred', label: 'Starred', count: user?.starsReceived || 0 },
     { id: 'activity', label: 'Activity', count: user?.contributionsCount || 0 }
   ];
@@ -360,7 +358,7 @@ const Profile = () => {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">Team Player</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Collaborated on 5+ projects</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Collaborated on 5+ snippets</p>
                   </div>
                 </div>
               </div>
@@ -433,19 +431,17 @@ const Profile = () => {
               {activeTab !== 'snippets' && (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gray-200 dark:bg-dark-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    {activeTab === 'projects' && <Code className="h-8 w-8 text-gray-400 dark:text-dark-400" />}
                     {activeTab === 'starred' && <Star className="h-8 w-8 text-gray-400 dark:text-dark-400" />}
                     {activeTab === 'activity' && <TrendingUp className="h-8 w-8 text-gray-400 dark:text-dark-400" />}
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                    {activeTab === 'projects' && 'No projects'}
                     {activeTab === 'starred' && 'No starred content'}
                     {activeTab === 'activity' && 'No recent activity'}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400">
                     {isOwnProfile 
-                      ? `You haven't ${activeTab === 'projects' ? 'created any projects' : activeTab === 'starred' ? 'starred anything' : 'been active'} yet.`
-                      : `This user hasn't ${activeTab === 'projects' ? 'created any projects' : activeTab === 'starred' ? 'starred anything' : 'been active'} yet.`
+                      ? `You haven't ${activeTab === 'starred' ? 'starred anything' : 'been active'} yet.`
+                      : `This user hasn't ${activeTab === 'starred' ? 'starred anything' : 'been active'} yet.`
                     }
                   </p>
                 </div>

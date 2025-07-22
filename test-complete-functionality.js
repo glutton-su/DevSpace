@@ -27,9 +27,30 @@ async function testCompleteFunctionality() {
     console.log('✅ Login successful');
     console.log('');
 
-    // 4. Create a snippet
+    // 4. Create a snippet (with required project)
     console.log('4. Creating a test snippet...');
+    
+    // First create a project
+    const projectData = {
+      title: 'Complete Test Snippet - Project',
+      description: 'Auto-generated project for snippet',
+      isPublic: true,
+      isCollaborative: false
+    };
+    
+    const projectResponse = await axios.post('http://localhost:5000/api/projects', projectData, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const projectId = projectResponse.data.project?.id || projectResponse.data.id;
+    console.log(`✅ Project created with ID: ${projectId}`);
+    
+    // Now create the snippet with the project ID
     const snippetData = {
+      projectId: projectId,
       title: 'Complete Test Snippet',
       content: `// This is a complete test snippet
 function helloWorld() {

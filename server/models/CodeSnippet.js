@@ -74,6 +74,14 @@ module.exports = (sequelize) => {
       foreignKey: "forkedFromSnippet",
       as: "forks",
     });
+    CodeSnippet.hasMany(models.Star, {
+      foreignKey: "codeSnippetId",
+      as: "stars",
+    });
+    CodeSnippet.hasMany(models.Like, {
+      foreignKey: "codeSnippetId",
+      as: "likes",
+    });
     CodeSnippet.belongsToMany(models.Tag, {
       through: "SnippetTag",
       foreignKey: "codeSnippetId",
