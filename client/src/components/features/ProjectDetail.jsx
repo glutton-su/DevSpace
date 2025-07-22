@@ -19,7 +19,7 @@ import {
   Share2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { fileAPI } from '../../services/api';
+import { projectAPI, snippetAPI } from '../../services/api';
 
 const ProjectDetail = () => {
   const { id } = useParams();
@@ -32,103 +32,92 @@ const ProjectDetail = () => {
   const [files, setFiles] = useState([]);
 
   useEffect(() => {
-    fetchProject();
-    fetchProjectSnippets();
-    fetchFiles();
+    const loadProjectData = async () => {
+      setLoading(true);
+      await fetchProject();
+      await fetchProjectSnippets();
+      await fetchFiles();
+      setLoading(false);
+    };
+    
+    loadProjectData();
   }, [id]);
 
   const fetchProject = async () => {
     try {
-      // Mock project data
-      const mockProject = {
-        id: parseInt(id),
-        name: 'React Component Library',
-        description: 'A comprehensive library of reusable React components with TypeScript support and Storybook documentation.',
+      const response = await projectAPI.getProject(id);
+      const projectData = response.project || response;
+      
+      // Map the backend data to frontend expected structure
+      const mappedProject = {
+        id: projectData.id,
+        name: projectData.title,
+        description: projectData.description,
         owner: {
-          id: user?.id,
-          username: user?.username || 'john_doe',
-          name: user?.name || 'John Doe',
-          avatar: user?.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=50&h=50&dpr=2'
+          id: projectData.owner?.id || projectData.userId,
+          username: projectData.owner?.username,
+          name: projectData.owner?.fullName || projectData.owner?.username,
+          avatar: projectData.owner?.avatarUrl
         },
-        languages: ['javascript', 'typescript', 'css'],
-        tags: ['react', 'components', 'ui', 'typescript'],
-        stars: 45,
-        forks: 12,
-        views: 234,
-        snippetsCount: 8,
-        collaborators: 3,
-        isPrivate: false,
-        isArchived: false,
-        allowCollaboration: true,
-        template: 'react',
-        createdAt: '2024-01-10T00:00:00Z',
-        updatedAt: '2024-01-15T12:00:00Z'
+        languages: projectData.codeSnippets ? [...new Set(projectData.codeSnippets.map(s => s.language).filter(Boolean))] : [],
+        tags: projectData.tags?.map(tag => tag.name) || [],
+        stars: projectData.starCount || 0,
+        forks: projectData.forkCount || 0,
+        views: projectData.viewCount || 0,
+        snippetsCount: projectData.codeSnippets?.length || 0,
+        collaborators: projectData.collaborators?.length || 0,
+        isPrivate: !projectData.isPublic,
+        isArchived: projectData.isArchived || false,
+        allowCollaboration: projectData.isCollaborative,
+        template: projectData.template,
+        createdAt: projectData.created_at || projectData.createdAt,
+        updatedAt: projectData.updated_at || projectData.updatedAt,
+        isStarred: projectData.isStarred || false
       };
       
-      setProject(mockProject);
+      setProject(mappedProject);
+      setIsStarred(mappedProject.isStarred);
+      
+      // Also set the snippets from the project data
+      if (projectData.codeSnippets) {
+        const mappedSnippets = projectData.codeSnippets.map(snippet => ({
+          id: snippet.id,
+          title: snippet.title,
+          description: snippet.description,
+          language: snippet.language,
+          content: snippet.content,
+          code: snippet.content, // For compatibility
+          projectId: snippet.projectId,
+          author: {
+            id: projectData.owner?.id || projectData.userId,
+            username: projectData.owner?.username,
+            name: projectData.owner?.fullName || projectData.owner?.username,
+            avatar: projectData.owner?.avatarUrl
+          },
+          tags: snippet.tags?.map(tag => tag.name) || [],
+          likes: snippet.likeCount || 0,
+          stars: snippet.starCount || 0,
+          forks: snippet.forkCount || 0,
+          views: snippet.viewCount || 0,
+          createdAt: snippet.created_at || snippet.createdAt,
+          updatedAt: snippet.updated_at || snippet.updatedAt,
+          isPublic: snippet.isPublic,
+          filePath: snippet.filePath
+        }));
+        
+        setSnippets(mappedSnippets);
+      }
     } catch (error) {
       console.error('Error fetching project:', error);
       toast.error('Failed to load project');
+      navigate('/projects');
     }
   };
 
   const fetchProjectSnippets = async () => {
-    try {
-      setLoading(true);
-      // Mock snippets for this project
-      const mockSnippets = [
-        {
-          id: 1,
-          title: 'Button Component',
-          description: 'Reusable button component with variants',
-          language: 'javascript',
-          code: `import React from 'react';
-import './Button.css';
-
-const Button = ({ 
-  children, 
-  variant = 'primary', 
-  size = 'medium',
-  disabled = false,
-  onClick,
-  ...props 
-}) => {
-  const className = \`btn btn-\${variant} btn-\${size}\`;
-  
-  return (
-    <button 
-      className={className}
-      disabled={disabled}
-      onClick={onClick}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-};
-
-export default Button;`,
-          author: {
-            id: user?.id,
-            username: user?.username || 'john_doe',
-            name: user?.name || 'John Doe',
-            avatar: user?.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=50&h=50&dpr=2'
-          },
-          tags: ['react', 'component', 'button'],
-          likes: 15,
-          stars: 8,
-          forks: 3,
-          views: 45,
-          createdAt: '2024-01-15T10:30:00Z'
-        }
-      ];
-      
-      setSnippets(mockSnippets);
-    } catch (error) {
-      console.error('Error fetching project snippets:', error);
-    } finally {
-      setLoading(false);
-    }
+    // Snippets are now fetched as part of fetchProject
+    // This function is kept for compatibility but doesn't need to do anything
+    setLoading(false);
   };
 
   const fetchFiles = async () => {

@@ -14,6 +14,7 @@ import Settings from './pages/Settings';
 import Projects from './pages/Projects';
 import CreateProject from './components/features/CreateProject';
 import ProjectDetail from './components/features/ProjectDetail';
+import SnippetDetail from './components/features/SnippetDetail';
 import CollaborationRoom from './components/features/CollaborationRoom';
 import ModerationPanel from './components/features/ModerationPanel';
 import LoadingSpinner from './components/common/LoadingSpinner';
@@ -118,6 +119,11 @@ function AppContent() {
           <Route path="/project/:id" element={
             <ProtectedRoute>
               <ProjectDetail />
+            </ProtectedRoute>
+          } />
+          <Route path="/snippet/:id" element={
+            <ProtectedRoute>
+              <SnippetDetail />
             </ProtectedRoute>
           } />
           <Route path="/collaborate" element={
