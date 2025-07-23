@@ -265,7 +265,7 @@ const updateCodeSnippet = async (req, res) => {
       return res.status(404).json({ message: "Code snippet not found" });
     }
 
-    // Check if user has edit access (owner, project collaborator, or snippet collaborator)
+    // Check if user has edit access (owner or project collaborator)
     const isOwner = codeSnippet.project.userId === req.user.id;
     const isProjectCollaborator = await ProjectCollaborator.findOne({
       where: {
@@ -274,35 +274,28 @@ const updateCodeSnippet = async (req, res) => {
         role: { [Op.in]: ["admin", "editor"] },
       },
     });
-    const isSnippetCollaborator = await CodeSnippetCollaborator.findOne({
-      where: {
-        codeSnippetId: id,
-        userId: req.user.id,
-        role: { [Op.in]: ["editor"] },
-      },
-    });
 
-    // For collaborative snippets, allow anyone to edit (they'll be auto-added as collaborator)
-    const hasEditAccess = isOwner || isProjectCollaborator || isSnippetCollaborator || 
+    // For collaborative snippets, allow anyone to edit (they'll be auto-added as project collaborator)
+    const hasEditAccess = isOwner || isProjectCollaborator || 
                           (codeSnippet.allowCollaboration && codeSnippet.isPublic);
 
     if (!hasEditAccess) {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    // If this is a collaborative snippet and user is not owner/collaborator, add them as editor
-    if (codeSnippet.allowCollaboration && !isOwner && !isSnippetCollaborator && !isProjectCollaborator) {
+    // If this is a collaborative snippet and user is not owner/collaborator, add them as project collaborator
+    if (codeSnippet.allowCollaboration && !isOwner && !isProjectCollaborator) {
       try {
-        await CodeSnippetCollaborator.create({
-          codeSnippetId: id,
+        await ProjectCollaborator.create({
+          projectId: codeSnippet.projectId,
           userId: req.user.id,
           role: 'editor'
         });
-        console.log(`Auto-added user ${req.user.id} as collaborator to snippet ${id}`);
+        console.log(`Auto-added user ${req.user.id} as project collaborator for snippet ${id}`);
       } catch (error) {
         // If user is already a collaborator, ignore the error
         if (!error.message.includes('Duplicate entry')) {
-          console.error('Error auto-adding collaborator:', error);
+          console.error('Error auto-adding project collaborator:', error);
         }
       }
     }

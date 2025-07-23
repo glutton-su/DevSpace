@@ -13,11 +13,17 @@ const SnippetActions = ({ snippet, onStar, onFork, onCollaborate }) => {
 
   // Check if current user owns this snippet
   const isOwner = user && snippet?.project && snippet.project.userId === user.id;
-  // Check if user is already a collaborator
-  const isCollaborator = snippet?.isCollaborator;
-  // For collaborative snippets, anyone can edit (they'll be auto-added as collaborator)
+  
+  // Check if user is already a project collaborator
+  const userCollaboration = snippet?.project?.collaborators?.find(
+    collab => collab.user?.id === user?.id
+  );
+  const isCollaborator = Boolean(userCollaboration);
+  const collaboratorRole = userCollaboration?.role;
+  
+  // For collaborative snippets, collaborators with editor/admin role can edit
   const canEdit = isOwner || 
-                  (isCollaborator && snippet?.collaboratorRole === 'editor') ||
+                  (isCollaborator && (collaboratorRole === 'editor' || collaboratorRole === 'admin')) ||
                   (snippet?.allowCollaboration && user && !isOwner);
   
   // Show collaborate button for non-owners who aren't already collaborators
@@ -86,7 +92,7 @@ const SnippetActions = ({ snippet, onStar, onFork, onCollaborate }) => {
           {isCollaborator && (
             <span className="flex items-center space-x-1 text-purple-400 text-sm">
               <Users className="h-4 w-4" />
-              <span>Collaborator</span>
+              <span>Collaborator ({collaboratorRole})</span>
             </span>
           )}
 

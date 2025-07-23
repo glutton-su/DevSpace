@@ -192,11 +192,11 @@ const SnippetCard = ({ snippet, onStar, onFork, onCollaborate, showFullCode = fa
             <div className="flex -space-x-2">
               {snippet.project.collaborators.slice(0, 3).map((collaborator, index) => (
                 <div
-                  key={collaborator.user.id}
+                  key={collaborator.user?.id || index}
                   className="h-6 w-6 rounded-full bg-purple-600 flex items-center justify-center text-xs text-white border-2 border-dark-800"
-                  title={collaborator.user.fullName || collaborator.user.username}
+                  title={collaborator.user?.fullName || collaborator.user?.username || 'Unknown User'}
                 >
-                  {(collaborator.user.fullName || collaborator.user.username).charAt(0).toUpperCase()}
+                  {(collaborator.user?.fullName || collaborator.user?.username || 'U').charAt(0).toUpperCase()}
                 </div>
               ))}
               {snippet.project.collaborators.length > 3 && (

@@ -3,6 +3,16 @@ import axios from 'axios';
 // Base API configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Public API client (no authentication required)
+export const publicAPI = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Authenticated API client
 export const authAPI = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -112,8 +122,18 @@ export const snippetAPI = {
   },
 
   getSnippet: async (id) => {
-    const response = await authAPI.get(`/code/${id}`);
-    return response.data;
+    // Try authenticated request first (for better UX with star status, etc.)
+    try {
+      const response = await authAPI.get(`/code/${id}`);
+      return response.data;
+    } catch (error) {
+      // If auth fails, try public access
+      if (error.response?.status === 401) {
+        const response = await publicAPI.get(`/code/${id}`);
+        return response.data;
+      }
+      throw error;
+    }
   },
 
   createSnippet: async (snippetData) => {
@@ -147,7 +167,7 @@ export const snippetAPI = {
   },
 
   getCollaborativeSnippets: async (params = {}) => {
-    const response = await authAPI.get('/code/collaborative', { params });
+    const response = await publicAPI.get('/code/collaborative', { params });
     return response.data;
   },
 
@@ -169,7 +189,7 @@ export const snippetAPI = {
 
   // Public snippets
   getPublicSnippets: async (params = {}) => {
-    const response = await authAPI.get('/code/public/all', { params });
+    const response = await publicAPI.get('/code/public/all', { params });
     return response.data;
   },
 
