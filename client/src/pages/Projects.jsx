@@ -17,7 +17,7 @@ import {
   List
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-
+// commit test
 const Projects = () => {
   const { user } = useAuth();
   const [snippets, setSnippets] = useState([]);
