@@ -33,8 +33,8 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState('snippets');
   const [isFollowing, setIsFollowing] = useState(false);
   const [languageStats, setLanguageStats] = useState([]);
-  const [snippetStats, setSnippetStats] = useState({ snippetCount: 0, starredCount: 0, totalSnippets: 0 });
-  const [tabCounts, setTabCounts] = useState({ snippets: 0, starred: 0, activity: 0 });
+  const [snippetStats, setSnippetStats] = useState({ snippetCount: 0, forkedCount: 0, totalSnippets: 0 });
+  const [tabCounts, setTabCounts] = useState({ snippets: 0, forked: 0, activity: 0 });
 
   const isOwnProfile = !username || username === currentUser?.username;
 
@@ -86,9 +86,9 @@ const Profile = () => {
       if (activeTab === 'snippets') {
         // Get user's own snippets
         response = await snippetAPI.getUserOwnedSnippets();
-      } else if (activeTab === 'starred') {
-        // Get user's starred snippets
-        response = await snippetAPI.getUserStarredSnippets();
+      } else if (activeTab === 'forked') {
+        // Get user's forked snippets
+        response = await snippetAPI.getUserForkedSnippets();
       } else {
         // For activity tab, show owned snippets for now
         response = await snippetAPI.getUserOwnedSnippets();
@@ -153,7 +153,7 @@ const Profile = () => {
       setLanguageStats(response.languageStats || []);
       setSnippetStats({
         snippetCount: response.snippetCount || 0,
-        starredCount: response.starredCount || 0,
+        forkedCount: response.forkedCount || 0,
         totalSnippets: response.totalSnippets || 0
       });
       
@@ -161,14 +161,14 @@ const Profile = () => {
       setTabCounts(prev => ({
         ...prev,
         snippets: response.snippetCount || 0,
-        starred: response.starredCount || 0
+        forked: response.forkedCount || 0
       }));
     } catch (error) {
       console.error('Error fetching language stats:', error);
       // Fallback to empty array instead of mock data
       setLanguageStats([]);
-      setSnippetStats({ snippetCount: 0, starredCount: 0, totalSnippets: 0 });
-      setTabCounts(prev => ({ ...prev, snippets: 0, starred: 0 }));
+      setSnippetStats({ snippetCount: 0, forkedCount: 0, totalSnippets: 0 });
+      setTabCounts(prev => ({ ...prev, snippets: 0, forked: 0 }));
     }
   };
 
@@ -191,7 +191,7 @@ const Profile = () => {
 
   const tabs = [
     { id: 'snippets', label: 'Snippets', count: tabCounts.snippets || snippetStats.snippetCount },
-    { id: 'starred', label: 'Starred', count: tabCounts.starred },
+    { id: 'forked', label: 'Forked', count: tabCounts.forked },
     { id: 'activity', label: 'Activity', count: tabCounts.activity || user?.stats?.totalProjects || 0 }
   ];
 
@@ -338,10 +338,10 @@ const Profile = () => {
                 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <Star className="h-4 w-4 text-yellow-500" />
-                    <span className="text-gray-700 dark:text-gray-300">Stars</span>
+                    <GitFork className="h-4 w-4 text-green-500" />
+                    <span className="text-gray-700 dark:text-gray-300">Forked</span>
                   </div>
-                  <span className="font-semibold text-gray-900 dark:text-white">{user?.stats?.totalStarsReceived || 0}</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{snippetStats.forkedCount}</span>
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -413,7 +413,7 @@ const Profile = () => {
 
             {/* Tab Content */}
             <div>
-              {(activeTab === 'snippets' || activeTab === 'starred') && (
+              {(activeTab === 'snippets' || activeTab === 'forked') && (
                 <div>
                   {loading ? (
                     <div className="flex justify-center py-12">
@@ -434,7 +434,7 @@ const Profile = () => {
                     <div className="text-center py-12">
                       <Code className="h-16 w-16 text-gray-400 dark:text-dark-600 mx-auto mb-4" />
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                        {activeTab === 'snippets' ? 'No snippets yet' : 'No starred content'}
+                        {activeTab === 'snippets' ? 'No snippets yet' : 'No forked content'}
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400 mb-6">
                         {activeTab === 'snippets' 
@@ -443,8 +443,8 @@ const Profile = () => {
                               : "This user hasn't shared any snippets yet."
                             )
                           : (isOwnProfile 
-                              ? "You haven't starred anything yet."
-                              : "This user hasn't starred anything yet."
+                              ? "You haven't forked anything yet."
+                              : "This user hasn't forked anything yet."
                             )
                         }
                       </p>

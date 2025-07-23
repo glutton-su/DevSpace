@@ -270,6 +270,18 @@ const getUserSnippetStats = async (req, res) => {
       where: { userId: user.id, codeSnippetId: { [Op.ne]: null } }
     });
 
+    // Get forked snippets count for the user
+    const forkedCount = await CodeSnippet.count({
+      include: [{
+        model: Project,
+        as: 'project',
+        where: { userId: user.id }
+      }],
+      where: {
+        forkedFromSnippet: { [Op.ne]: null }
+      }
+    });
+
     // Get language statistics
     const languageStats = await CodeSnippet.findAll({
       attributes: [
@@ -334,6 +346,7 @@ const getUserSnippetStats = async (req, res) => {
     res.json({
       snippetCount,
       starredCount,
+      forkedCount,
       languageStats: formattedLanguageStats,
       totalSnippets
     });
