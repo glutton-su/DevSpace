@@ -19,7 +19,8 @@ import {
   Eye,
   GitFork,
   Settings,
-  Award
+  Award,
+  User
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -208,11 +209,9 @@ const Profile = () => {
           <div className="flex flex-col lg:flex-row items-start lg:items-center space-y-6 lg:space-y-0 lg:space-x-8">
             {/* Avatar */}
             <div className="flex-shrink-0">
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="w-32 h-32 rounded-full object-cover border-4 border-primary-600"
-              />
+              <div className="w-32 h-32 rounded-full bg-primary-600 flex items-center justify-center border-4 border-primary-600">
+                <User className="h-16 w-16 text-white" />
+              </div>
             </div>
 
             {/* User Info */}

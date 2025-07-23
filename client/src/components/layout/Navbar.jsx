@@ -157,11 +157,9 @@ const Navbar = () => {
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
                     className="flex items-center space-x-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-800 transition-colors"
                   >
-                    <img
-                      src={user?.avatar || '/default-avatar.svg'}
-                      alt={user?.name}
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
+                    <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
+                      <User className="h-4 w-4 text-white" />
+                    </div>
                     <span className="hidden sm:block text-sm text-gray-700 dark:text-gray-200">
                       {user?.name}
                     </span>

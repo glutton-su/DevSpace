@@ -156,11 +156,9 @@ const SnippetDetail = () => {
 
               {/* Author Info */}
               <div className="flex items-center space-x-3 mb-4">
-                <img
-                  src={(snippet.author?.avatar || snippet.project?.owner?.avatarUrl) || '/default-avatar.png'}
-                  alt={(snippet.author?.name || snippet.project?.owner?.fullName || snippet.project?.owner?.username) || 'User'}
-                  className="h-10 w-10 rounded-full object-cover"
-                />
+                <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
+                    <User className="h-4 w-4 text-white" />
+                </div>
                 <div className="flex-1">
                   <Link 
                     to={`/profile/${snippet.author?.username || snippet.project?.owner?.username}`}
