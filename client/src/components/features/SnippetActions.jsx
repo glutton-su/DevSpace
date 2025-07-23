@@ -52,7 +52,7 @@ const SnippetActions = ({ snippet, onStar, onFork }) => {
           title="Fork snippet"
         >
           <GitFork className="h-4 w-4" />
-          <span className="text-sm">{snippet.forks || 0}</span>
+          <span className="text-sm">{snippet.forkCount || 0}</span>
         </button>
       </div>
     </div>

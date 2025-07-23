@@ -176,7 +176,43 @@ const getCodeSnippetById = async (req, res) => {
       }
     }
 
-    res.json({ codeSnippet });
+    // Enrich with star and fork counts
+    const snippetData = codeSnippet.toJSON();
+    
+    try {
+      // Get actual star count
+      const starCount = await Star.count({
+        where: { codeSnippetId: codeSnippet.id }
+      });
+      
+      snippetData.starCount = starCount;
+      
+      // Get fork count
+      const forkCount = await CodeSnippet.count({
+        where: { forkedFromSnippet: codeSnippet.id }
+      });
+      
+      snippetData.forkCount = forkCount;
+      
+      // If user is authenticated, check their star status
+      if (req.user) {
+        const userStar = await Star.findOne({
+          where: { userId: req.user.id, codeSnippetId: codeSnippet.id }
+        });
+        
+        snippetData.isStarred = !!userStar;
+      } else {
+        snippetData.isStarred = false;
+      }
+    } catch (error) {
+      console.error('Error enriching snippet:', codeSnippet.id, error);
+      // Fallback to default values
+      snippetData.starCount = 0;
+      snippetData.forkCount = 0;
+      snippetData.isStarred = false;
+    }
+
+    res.json({ codeSnippet: snippetData });
   } catch (error) {
     console.error("Get code snippet by ID error:", error);
     res.status(500).json({ message: "Server error" });
@@ -503,6 +539,13 @@ const getUserOwnedSnippets = async (req, res) => {
         
         snippetData.starCount = starCount;
         
+        // Get fork count
+        const forkCount = await CodeSnippet.count({
+          where: { forkedFromSnippet: snippet.id }
+        });
+        
+        snippetData.forkCount = forkCount;
+        
         // Check user's star status
         const userStar = await Star.findOne({
           where: { userId: req.user.id, codeSnippetId: snippet.id }
@@ -513,6 +556,7 @@ const getUserOwnedSnippets = async (req, res) => {
         console.error('Error enriching snippet:', snippet.id, error);
         // Fallback to default values
         snippetData.starCount = 0;
+        snippetData.forkCount = 0;
         snippetData.isStarred = false;
       }
       
@@ -585,11 +629,19 @@ const getUserStarredSnippets = async (req, res) => {
         });
         
         snippetData.starCount = starCount;
+        
+        // Get fork count
+        const forkCount = await CodeSnippet.count({
+          where: { forkedFromSnippet: snippet.id }
+        });
+        
+        snippetData.forkCount = forkCount;
         snippetData.isStarred = true; // User starred this snippet
       } catch (error) {
         console.error('Error enriching starred snippet:', snippet.id, error);
         // Fallback to default values
         snippetData.starCount = 0;
+        snippetData.forkCount = 0;
         snippetData.isStarred = true;
       }
       
@@ -678,6 +730,13 @@ const getUserForkedSnippets = async (req, res) => {
         
         snippetData.starCount = starCount;
         
+        // Get fork count
+        const forkCount = await CodeSnippet.count({
+          where: { forkedFromSnippet: snippet.id }
+        });
+        
+        snippetData.forkCount = forkCount;
+        
         // Check user's star status
         const userStar = await Star.findOne({
           where: { userId: req.user.id, codeSnippetId: snippet.id }
@@ -688,6 +747,7 @@ const getUserForkedSnippets = async (req, res) => {
         console.error('Error enriching forked snippet:', snippet.id, error);
         // Fallback to default values
         snippetData.starCount = 0;
+        snippetData.forkCount = 0;
         snippetData.isStarred = false;
       }
       
@@ -864,6 +924,13 @@ const getPublicSnippets = async (req, res) => {
         
         snippetData.starCount = starCount;
         
+        // Get fork count
+        const forkCount = await CodeSnippet.count({
+          where: { forkedFromSnippet: snippet.id }
+        });
+        
+        snippetData.forkCount = forkCount;
+        
         // If user is authenticated, check their star status
         if (req.user) {
           const userStar = await Star.findOne({
@@ -878,6 +945,7 @@ const getPublicSnippets = async (req, res) => {
         console.error('Error enriching snippet:', snippet.id, error);
         // Fallback to default values
         snippetData.starCount = 0;
+        snippetData.forkCount = 0;
         snippetData.isStarred = false;
       }
       
