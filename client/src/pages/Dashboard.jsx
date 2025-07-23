@@ -45,7 +45,9 @@ const Dashboard = () => {
       setLoading(true);
       const params = {};
       if (searchQuery) params.search = searchQuery;
-      const response = await snippetAPI.getSnippets(params);
+      
+      // Use public snippets for the dashboard
+      const response = await snippetAPI.getPublicSnippets(params);
       let filteredSnippets = response.snippets || response.data || response;
       
       if (!Array.isArray(filteredSnippets)) {
@@ -75,13 +77,18 @@ const Dashboard = () => {
 
   const handleStar = async (snippetId) => {
     try {
-      await snippetAPI.toggleStar(snippetId);
+      const response = await snippetAPI.toggleStar(snippetId);
       setSnippets(prev => prev.map(snippet => 
         snippet.id === snippetId 
-          ? { ...snippet, starCount: (snippet.starCount || 0) + (snippet.isStarred ? -1 : 1), isStarred: !snippet.isStarred }
+          ? { 
+              ...snippet, 
+              starCount: response.starCount !== undefined ? response.starCount : (snippet.starCount || 0) + (snippet.isStarred ? -1 : 1), 
+              isStarred: response.isStarred !== undefined ? response.isStarred : !snippet.isStarred 
+            }
           : snippet
       ));
-      toast.success('Snippet starred!');
+      const isStarred = response.isStarred !== undefined ? response.isStarred : !snippets.find(s => s.id === snippetId)?.isStarred;
+      toast.success(isStarred ? 'Snippet starred!' : 'Snippet unstarred!');
     } catch (error) {
       console.error('Error starring snippet:', error);
       toast.error('Failed to star snippet');
@@ -90,13 +97,18 @@ const Dashboard = () => {
 
   const handleLike = async (snippetId) => {
     try {
-      await snippetAPI.toggleLike(snippetId);
+      const response = await snippetAPI.toggleLike(snippetId);
       setSnippets(prev => prev.map(snippet => 
         snippet.id === snippetId 
-          ? { ...snippet, likeCount: (snippet.likeCount || 0) + (snippet.isLiked ? -1 : 1), isLiked: !snippet.isLiked }
+          ? { 
+              ...snippet, 
+              likeCount: response.likeCount !== undefined ? response.likeCount : (snippet.likeCount || 0) + (snippet.isLiked ? -1 : 1), 
+              isLiked: response.isLiked !== undefined ? response.isLiked : !snippet.isLiked 
+            }
           : snippet
       ));
-      toast.success('Snippet liked!');
+      const isLiked = response.isLiked !== undefined ? response.isLiked : !snippets.find(s => s.id === snippetId)?.isLiked;
+      toast.success(isLiked ? 'Snippet liked!' : 'Like removed!');
     } catch (error) {
       console.error('Error liking snippet:', error);
       toast.error('Failed to like snippet');

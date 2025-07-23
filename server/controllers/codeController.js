@@ -576,13 +576,27 @@ const toggleSnippetStar = async (req, res) => {
       where: { userId, codeSnippetId: snippetId }
     });
 
+    let isStarred;
     if (existingStar) {
       await existingStar.destroy();
-      res.json({ message: 'Star removed', isStarred: false });
+      isStarred = false;
     } else {
       await Star.create({ userId, codeSnippetId: snippetId });
-      res.json({ message: 'Star added', isStarred: true });
+      isStarred = true;
     }
+
+    // Get updated star count
+    const starCount = await Star.count({
+      where: { codeSnippetId: snippetId }
+    });
+
+    console.log('Star toggle - snippetId:', snippetId, 'isStarred:', isStarred, 'starCount:', starCount);
+
+    res.json({ 
+      message: isStarred ? 'Star added' : 'Star removed', 
+      isStarred,
+      starCount
+    });
   } catch (error) {
     console.error('Error toggling star:', error);
     res.status(500).json({ message: 'Server error' });
@@ -685,6 +699,8 @@ const forkCodeSnippet = async (req, res) => {
 // Get public snippets
 const getPublicSnippets = async (req, res) => {
   try {
+    console.log('getPublicSnippets called with user:', req.user?.id || 'unauthenticated');
+    
     const { language, search, page = 1, limit = 20 } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
@@ -717,15 +733,60 @@ const getPublicSnippets = async (req, res) => {
       offset: offset
     });
 
+    console.log('Found snippets:', snippets.rows.length);
+
+    // Add star/like data to snippets
+    const enrichedSnippets = await Promise.all(snippets.rows.map(async (snippet) => {
+      const snippetData = snippet.toJSON();
+      
+      try {
+        // Get actual star and like counts
+        const starCount = await Star.count({
+          where: { codeSnippetId: snippet.id }
+        });
+        const likeCount = await Like.count({
+          where: { codeSnippetId: snippet.id }
+        });
+        
+        snippetData.starCount = starCount;
+        snippetData.likeCount = likeCount;
+        
+        // If user is authenticated, check their star/like status
+        if (req.user) {
+          const userStar = await Star.findOne({
+            where: { userId: req.user.id, codeSnippetId: snippet.id }
+          });
+          const userLike = await Like.findOne({
+            where: { userId: req.user.id, codeSnippetId: snippet.id }
+          });
+          
+          snippetData.isStarred = !!userStar;
+          snippetData.isLiked = !!userLike;
+        } else {
+          snippetData.isStarred = false;
+          snippetData.isLiked = false;
+        }
+      } catch (error) {
+        console.error('Error enriching snippet:', snippet.id, error);
+        // Fallback to default values
+        snippetData.starCount = 0;
+        snippetData.likeCount = 0;
+        snippetData.isStarred = false;
+        snippetData.isLiked = false;
+      }
+      
+      return snippetData;
+    }));
+
     res.json({ 
-      snippets: snippets.rows,
+      snippets: enrichedSnippets,
       total: snippets.count,
       page: parseInt(page),
       totalPages: Math.ceil(snippets.count / parseInt(limit))
     });
   } catch (error) {
     console.error('Error getting public snippets:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
