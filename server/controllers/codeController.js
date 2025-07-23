@@ -154,6 +154,15 @@ const getCodeSnippetById = async (req, res) => {
               as: "owner",
               attributes: ["id", "username", "avatarUrl"],
             },
+            {
+              model: ProjectCollaborator,
+              as: "collaborators",
+              include: [{
+                model: User,
+                as: "user",
+                attributes: ["id", "username", "fullName", "avatarUrl"]
+              }]
+            }
           ],
         },
         {
@@ -208,15 +217,25 @@ const getCodeSnippetById = async (req, res) => {
       
       snippetData.forkCount = forkCount;
       
-      // If user is authenticated, check their star status
+      // If user is authenticated, check their star status and collaboration status
       if (req.user) {
         const userStar = await Star.findOne({
           where: { userId: req.user.id, codeSnippetId: codeSnippet.id }
         });
         
         snippetData.isStarred = !!userStar;
+        
+        // Check if user is a project collaborator (for collaborative snippets)
+        const userCollaboration = await ProjectCollaborator.findOne({
+          where: { userId: req.user.id, projectId: codeSnippet.projectId }
+        });
+        
+        snippetData.isCollaborator = !!userCollaboration;
+        snippetData.collaboratorRole = userCollaboration?.role || null;
       } else {
         snippetData.isStarred = false;
+        snippetData.isCollaborator = false;
+        snippetData.collaboratorRole = null;
       }
     } catch (error) {
       console.error('Error enriching snippet:', codeSnippet.id, error);
@@ -246,19 +265,46 @@ const updateCodeSnippet = async (req, res) => {
       return res.status(404).json({ message: "Code snippet not found" });
     }
 
-    // Check if user has edit access
-    const hasEditAccess =
-      codeSnippet.project.userId === req.user.id ||
-      (await ProjectCollaborator.findOne({
-        where: {
-          projectId: codeSnippet.projectId,
-          userId: req.user.id,
-          role: { [Op.in]: ["admin", "editor"] },
-        },
-      }));
+    // Check if user has edit access (owner, project collaborator, or snippet collaborator)
+    const isOwner = codeSnippet.project.userId === req.user.id;
+    const isProjectCollaborator = await ProjectCollaborator.findOne({
+      where: {
+        projectId: codeSnippet.projectId,
+        userId: req.user.id,
+        role: { [Op.in]: ["admin", "editor"] },
+      },
+    });
+    const isSnippetCollaborator = await CodeSnippetCollaborator.findOne({
+      where: {
+        codeSnippetId: id,
+        userId: req.user.id,
+        role: { [Op.in]: ["editor"] },
+      },
+    });
+
+    // For collaborative snippets, allow anyone to edit (they'll be auto-added as collaborator)
+    const hasEditAccess = isOwner || isProjectCollaborator || isSnippetCollaborator || 
+                          (codeSnippet.allowCollaboration && codeSnippet.isPublic);
 
     if (!hasEditAccess) {
       return res.status(403).json({ message: "Access denied" });
+    }
+
+    // If this is a collaborative snippet and user is not owner/collaborator, add them as editor
+    if (codeSnippet.allowCollaboration && !isOwner && !isSnippetCollaborator && !isProjectCollaborator) {
+      try {
+        await CodeSnippetCollaborator.create({
+          codeSnippetId: id,
+          userId: req.user.id,
+          role: 'editor'
+        });
+        console.log(`Auto-added user ${req.user.id} as collaborator to snippet ${id}`);
+      } catch (error) {
+        // If user is already a collaborator, ignore the error
+        if (!error.message.includes('Duplicate entry')) {
+          console.error('Error auto-adding collaborator:', error);
+        }
+      }
     }
 
     await codeSnippet.update({
@@ -1010,11 +1056,22 @@ const getCollaborativeSnippets = async (req, res) => {
         {
           model: Project,
           as: 'project',
-          include: [{
-            model: User,
-            as: 'owner',
-            attributes: ['id', 'username', 'avatarUrl', 'fullName']
-          }]
+          include: [
+            {
+              model: User,
+              as: 'owner',
+              attributes: ['id', 'username', 'avatarUrl', 'fullName']
+            },
+            {
+              model: ProjectCollaborator,
+              as: 'collaborators',
+              include: [{
+                model: User,
+                as: 'user',
+                attributes: ['id', 'username', 'fullName', 'avatarUrl']
+              }]
+            }
+          ]
         },
         {
           model: Tag,
@@ -1099,11 +1156,11 @@ const getCollaborativeSnippets = async (req, res) => {
   }
 };
 
-// Add snippet collaborator
+// Add snippet collaborator (now adds to project collaboration group)
 const addSnippetCollaborator = async (req, res) => {
   try {
     const snippetId = req.params.id;
-    const { username, role = 'viewer' } = req.body;
+    const { username, role = 'editor' } = req.body;
 
     const snippet = await CodeSnippet.findByPk(snippetId, {
       include: [{
@@ -1116,8 +1173,18 @@ const addSnippetCollaborator = async (req, res) => {
       return res.status(404).json({ message: 'Snippet not found' });
     }
 
-    // Check if user owns the snippet or has admin access
-    if (snippet.project.userId !== req.user.id) {
+    // Check if snippet allows collaboration
+    if (!snippet.allowCollaboration || !snippet.isPublic) {
+      return res.status(400).json({ message: 'This snippet does not allow collaboration' });
+    }
+
+    // Check if user can join collaboration:
+    // 1. Snippet owner can add anyone
+    // 2. For collaborative snippets, users can add themselves to the project group
+    const isOwner = snippet.project.userId === req.user.id;
+    const isSelfCollaboration = username === req.user.username;
+    
+    if (!isOwner && !isSelfCollaboration) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -1126,23 +1193,32 @@ const addSnippetCollaborator = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const existingCollaborator = await CodeSnippetCollaborator.findOne({
-      where: { codeSnippetId: snippetId, userId: collaborator.id }
+    // Check if user is already a project collaborator
+    const existingProjectCollaborator = await ProjectCollaborator.findOne({
+      where: { projectId: snippet.projectId, userId: collaborator.id }
     });
 
-    if (existingCollaborator) {
-      return res.status(400).json({ message: 'User is already a collaborator' });
+    if (existingProjectCollaborator) {
+      return res.status(400).json({ message: 'User is already a collaborator on this project' });
     }
 
-    await CodeSnippetCollaborator.create({
-      codeSnippetId: snippetId,
+    // Add user as project collaborator (this gives them access to all collaborative snippets in the project)
+    await ProjectCollaborator.create({
+      projectId: snippet.projectId,
       userId: collaborator.id,
-      role
+      role: 'editor' // Always give editor role for collaborative access
     });
 
-    res.json({ message: 'Collaborator added successfully' });
+    res.json({ 
+      message: 'Successfully joined project collaboration group',
+      collaborator: {
+        id: collaborator.id,
+        username: collaborator.username,
+        role: 'editor'
+      }
+    });
   } catch (error) {
-    console.error('Error adding collaborator:', error);
+    console.error('Error adding to collaboration group:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -1200,6 +1276,56 @@ const getSnippetCollaborators = async (req, res) => {
   }
 };
 
+// Request collaboration access (user requests to become a collaborator)
+const requestSnippetCollaboration = async (req, res) => {
+  try {
+    const snippetId = req.params.id;
+    const userId = req.user.id;
+
+    const snippet = await CodeSnippet.findByPk(snippetId, {
+      include: [{
+        model: Project,
+        as: 'project'
+      }]
+    });
+
+    if (!snippet) {
+      return res.status(404).json({ message: 'Snippet not found' });
+    }
+
+    // Check if snippet allows collaboration
+    if (!snippet.allowCollaboration) {
+      return res.status(400).json({ message: 'This snippet does not allow collaboration' });
+    }
+
+    // Check if user is not the owner
+    if (snippet.project.userId === userId) {
+      return res.status(400).json({ message: 'You cannot request collaboration on your own snippet' });
+    }
+
+    // Check if user is already a collaborator
+    const existingCollaborator = await CodeSnippetCollaborator.findOne({
+      where: { codeSnippetId: snippetId, userId }
+    });
+
+    if (existingCollaborator) {
+      return res.status(400).json({ message: 'You are already a collaborator on this snippet' });
+    }
+
+    // Auto-approve collaboration request and add user as editor
+    await CodeSnippetCollaborator.create({
+      codeSnippetId: snippetId,
+      userId,
+      role: 'editor'
+    });
+
+    res.json({ message: 'Collaboration access granted successfully' });
+  } catch (error) {
+    console.error('Error requesting collaboration:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   createCodeSnippet,
   getCodeSnippets,
@@ -1218,6 +1344,8 @@ module.exports = {
   getPublicSnippets,
   getCollaborativeSnippets,
   addSnippetCollaborator,
+  requestSnippetCollaboration,
   removeSnippetCollaborator,
   getSnippetCollaborators,
+  requestSnippetCollaboration,
 };

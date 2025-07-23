@@ -18,6 +18,7 @@ const {
   toggleSnippetStar,
   forkCodeSnippet,
   addSnippetCollaborator,
+  requestSnippetCollaboration,
   removeSnippetCollaborator,
   getSnippetCollaborators,
 } = require("../controllers/codeController");

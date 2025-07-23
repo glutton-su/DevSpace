@@ -5,7 +5,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import SnippetActions from './SnippetActions';
 
-const SnippetCard = ({ snippet, onStar, onFork, showFullCode = false, showCollaborationBadge = false }) => {
+const SnippetCard = ({ snippet, onStar, onFork, onCollaborate, showFullCode = false, showCollaborationBadge = false }) => {
   const navigate = useNavigate();
 
   const formatDate = (dateString) => {
@@ -97,6 +97,39 @@ const SnippetCard = ({ snippet, onStar, onFork, showFullCode = false, showCollab
         </div>
       </div>
 
+      {/* Collaborators Section */}
+      {snippet.project?.collaborators && snippet.project.collaborators.length > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <Users className="h-4 w-4 text-purple-400" />
+            <span className="text-xs text-purple-400 font-medium">
+              {snippet.project.collaborators.length} Project Collaborator{snippet.project.collaborators.length > 1 ? 's' : ''}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {snippet.project.collaborators.slice(0, 3).map((collaborator, index) => (
+              <Link
+                key={index}
+                to={`/profile/${collaborator.user?.username}`}
+                className="flex items-center space-x-1 px-2 py-1 bg-purple-600/20 text-purple-300 text-xs rounded-full border border-purple-600/30 hover:bg-purple-600/30 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="h-4 w-4 rounded-full bg-purple-600 flex items-center justify-center">
+                  <User className="h-2 w-2 text-white" />
+                </div>
+                <span>{collaborator.user?.username}</span>
+                <span className="text-purple-400">({collaborator.role})</span>
+              </Link>
+            ))}
+            {snippet.project.collaborators.length > 3 && (
+              <span className="px-2 py-1 bg-gray-600/20 text-gray-400 text-xs rounded-full border border-gray-600/30">
+                +{snippet.project.collaborators.length - 3} more
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Code Preview */}
       <div className="relative mb-4 rounded-lg overflow-hidden bg-dark-900 border border-dark-700">
         <SyntaxHighlighter
@@ -123,37 +156,65 @@ const SnippetCard = ({ snippet, onStar, onFork, showFullCode = false, showCollab
         )}
       </div>
 
-      {/* Tags */}
-      {snippet.tags && snippet.tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-4">
-          {snippet.tags.slice(0, 3).map((tag, index) => {
-            const tagName = typeof tag === 'string' ? tag : tag.name || tag;
-            return (
-              <span
-                key={index}
-                className="px-3 py-1 bg-primary-600/20 text-primary-400 text-xs rounded-full border border-primary-600/30 hover:bg-primary-600/30 transition-colors cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/search?tag=${tagName}`);
-                }}
-              >
-                #{tagName}
+      {/* Tags and Collaborators */}
+      <div className="space-y-3 mb-4">
+        {/* Tags */}
+        {snippet.tags && snippet.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {snippet.tags.slice(0, 3).map((tag, index) => {
+              const tagName = typeof tag === 'string' ? tag : tag.name || tag;
+              return (
+                <span
+                  key={index}
+                  className="px-3 py-1 bg-primary-600/20 text-primary-400 text-xs rounded-full border border-primary-600/30 hover:bg-primary-600/30 transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/search?tag=${tagName}`);
+                  }}
+                >
+                  #{tagName}
+                </span>
+              );
+            })}
+            {snippet.tags.length > 3 && (
+              <span className="px-3 py-1 bg-gray-600/20 text-gray-400 text-xs rounded-full border border-gray-600/30">
+                +{snippet.tags.length - 3} more
               </span>
-            );
-          })}
-          {snippet.tags.length > 3 && (
-            <span className="px-3 py-1 bg-gray-600/20 text-gray-400 text-xs rounded-full border border-gray-600/30">
-              +{snippet.tags.length - 3} more
-            </span>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
+
+        {/* Collaborators */}
+        {snippet.project?.collaborators && snippet.project.collaborators.length > 0 && (
+          <div className="flex items-center space-x-2">
+            <Users className="h-4 w-4 text-purple-400" />
+            <span className="text-xs text-dark-300">Project Collaborators:</span>
+            <div className="flex -space-x-2">
+              {snippet.project.collaborators.slice(0, 3).map((collaborator, index) => (
+                <div
+                  key={collaborator.user.id}
+                  className="h-6 w-6 rounded-full bg-purple-600 flex items-center justify-center text-xs text-white border-2 border-dark-800"
+                  title={collaborator.user.fullName || collaborator.user.username}
+                >
+                  {(collaborator.user.fullName || collaborator.user.username).charAt(0).toUpperCase()}
+                </div>
+              ))}
+              {snippet.project.collaborators.length > 3 && (
+                <div className="h-6 w-6 rounded-full bg-gray-600 flex items-center justify-center text-xs text-white border-2 border-dark-800">
+                  +{snippet.project.collaborators.length - 3}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Actions */}
       <SnippetActions
         snippet={snippet}
         onStar={onStar}
         onFork={onFork}
+        onCollaborate={onCollaborate}
       />
     </div>
   );

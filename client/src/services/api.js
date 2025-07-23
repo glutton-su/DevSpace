@@ -171,6 +171,27 @@ export const snippetAPI = {
   getPublicSnippets: async (params = {}) => {
     const response = await authAPI.get('/code/public/all', { params });
     return response.data;
+  },
+
+  // Collaboration methods
+  requestCollaboration: async (snippetId) => {
+    const response = await authAPI.post(`/code/${snippetId}/collaborate`);
+    return response.data;
+  },
+
+  addCollaborator: async (snippetId, username) => {
+    const response = await authAPI.post(`/code/${snippetId}/collaborators`, { username, role: 'editor' });
+    return response.data;
+  },
+
+  removeCollaborator: async (snippetId, userId) => {
+    const response = await authAPI.delete(`/code/${snippetId}/collaborators`, { data: { userId } });
+    return response.data;
+  },
+
+  getSnippetCollaborators: async (snippetId) => {
+    const response = await authAPI.get(`/code/${snippetId}/collaborators`);
+    return response.data;
   }
 };
 
