@@ -46,22 +46,34 @@ const createCodeSnippet = async (req, res) => {
 
     // Handle tags if provided
     if (tags && Array.isArray(tags) && tags.length > 0) {
+      console.log('🏷️  Processing tags:', tags);
       for (const tagName of tags) {
         if (tagName.trim()) {
+          console.log(`🏷️  Processing tag: "${tagName.trim()}"`);
           // Find or create tag
           const [tag] = await Tag.findOrCreate({
             where: { name: tagName.trim().toLowerCase() }
           });
+          console.log(`🏷️  Tag found/created:`, tag.id, tag.name);
           
           // Associate tag with snippet
           await codeSnippet.addTag(tag);
+          console.log(`🏷️  Tag associated with snippet`);
         }
       }
+    } else {
+      console.log('🏷️  No tags provided or tags is not an array:', tags);
     }
 
     // Fetch the snippet with tags included
     const snippetWithTags = await CodeSnippet.findByPk(codeSnippet.id, {
       include: [{ model: Tag, as: 'tags' }]
+    });
+
+    console.log('🏷️  Final snippet with tags:', {
+      id: snippetWithTags.id,
+      title: snippetWithTags.title,
+      tags: snippetWithTags.tags
     });
 
     res.status(201).json({
