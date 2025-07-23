@@ -351,14 +351,6 @@ const Profile = () => {
                   </div>
                   <span className="font-semibold text-gray-900 dark:text-white">{user?.stats?.totalForksReceived || 0}</span>
                 </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Users className="h-4 w-4 text-secondary-500" />
-                    <span className="text-gray-700 dark:text-gray-300">Projects</span>
-                  </div>
-                  <span className="font-semibold text-gray-900 dark:text-white">{user?.stats?.totalProjects || 0}</span>
-                </div>
               </div>
             </div>
 
