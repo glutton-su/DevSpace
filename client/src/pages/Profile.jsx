@@ -93,7 +93,10 @@ const Profile = () => {
         return;
       }
       
-      setSnippets(response.snippets || response.data || []);
+      setSnippets((response.snippets || response.data || []).map(snippet => ({
+        ...snippet,
+        tags: snippet.tags ? snippet.tags.map(tag => tag.name || tag) : []
+      })));
       
       // Update tab counts based on the response
       if (response.total !== undefined) {

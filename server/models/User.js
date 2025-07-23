@@ -58,6 +58,15 @@ module.exports = (sequelize) => {
         defaultValue: false,
         field: "is_verified",
       },
+      isSuspended: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        field: "is_suspended",
+      },
+      lastLogin: {
+        type: DataTypes.DATE,
+        field: "last_login",
+      },
     },
     {
       tableName: "users",

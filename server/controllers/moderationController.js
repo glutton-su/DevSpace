@@ -57,3 +57,54 @@ exports.updateUserRole = async (req, res, next) => {
     next(e);
   }
 };
+
+exports.deleteUser = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    
+    // Prevent admin from deleting themselves
+    if (user.id === req.user.id) {
+      return res.status(400).json({ message: "Cannot delete your own account" });
+    }
+    
+    await user.destroy();
+    res.json({ message: "User deleted successfully" });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.getAllUsers = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 20, search = '' } = req.query;
+    const offset = (page - 1) * limit;
+    
+    const whereClause = search 
+      ? {
+          [Op.or]: [
+            { username: { [Op.iLike]: `%${search}%` } },
+            { email: { [Op.iLike]: `%${search}%` } },
+            { fullName: { [Op.iLike]: `%${search}%` } }
+          ]
+        }
+      : {};
+    
+    const users = await User.findAndCountAll({
+      where: whereClause,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [['createdAt', 'DESC']],
+      attributes: ['id', 'username', 'email', 'fullName', 'role', 'isSuspended', 'createdAt', 'lastLogin']
+    });
+    
+    res.json({
+      users: users.rows,
+      total: users.count,
+      page: parseInt(page),
+      totalPages: Math.ceil(users.count / limit)
+    });
+  } catch (e) {
+    next(e);
+  }
+};

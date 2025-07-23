@@ -16,7 +16,7 @@ import SnippetDetail from './pages/SnippetDetail';
 import CreateProject from './components/features/CreateProject';
 import ProjectDetail from './components/features/ProjectDetail';
 import CollaborationRoom from './components/features/CollaborationRoom';
-import ModerationPanel from './components/features/ModerationPanel';
+import Moderation from './pages/Moderation';
 import LoadingSpinner from './components/common/LoadingSpinner';
 
 // Protected Route Component
@@ -49,7 +49,7 @@ const PublicRoute = ({ children }) => {
   return !isAuthenticated ? children : <Navigate to="/dashboard" replace />;
 };
 
-// Moderation Route Component (only for moderators/admins)
+// Moderation Route Component (only for admins)
 const ModerationRoute = ({ children }) => {
   const { user, isAuthenticated, loading } = useAuth();
   
@@ -65,7 +65,7 @@ const ModerationRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
   
-  if (user?.role !== 'moderator' && user?.role !== 'admin') {
+  if (user?.role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -151,7 +151,7 @@ function AppContent() {
           {/* Moderation Routes */}
           <Route path="/moderation" element={
             <ModerationRoute>
-              <ModerationPanel />
+              <Moderation />
             </ModerationRoute>
           } />
           

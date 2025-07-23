@@ -56,8 +56,8 @@ const Navbar = () => {
     { path: '/collaborate', label: 'Collaborate', icon: Users, requireAuth: true },
   ];
 
-  // Add moderation link for moderators/admins
-  if (user?.role === 'moderator' || user?.role === 'admin') {
+  // Add moderation link for admins only
+  if (user?.role === 'admin') {
     navLinks.push({ path: '/moderation', label: 'Moderation', icon: Shield, requireAuth: true });
   }
 

@@ -119,11 +119,11 @@ const SnippetCard = ({ snippet, onStar, onFork, showFullCode = false }) => {
 
       {/* Tags */}
       {snippet.tags && snippet.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-4">
-          {snippet.tags.map((tag, index) => (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {snippet.tags.slice(0, 3).map((tag, index) => (
             <span
               key={index}
-              className="px-2 py-1 bg-dark-800 text-dark-300 text-xs rounded-full"
+              className="px-3 py-1 bg-primary-600/20 text-primary-400 text-xs rounded-full border border-primary-600/30 hover:bg-primary-600/30 transition-colors cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 navigate(`/search?tag=${tag}`);
@@ -132,6 +132,11 @@ const SnippetCard = ({ snippet, onStar, onFork, showFullCode = false }) => {
               #{tag}
             </span>
           ))}
+          {snippet.tags.length > 3 && (
+            <span className="px-3 py-1 bg-gray-600/20 text-gray-400 text-xs rounded-full border border-gray-600/30">
+              +{snippet.tags.length - 3} more
+            </span>
+          )}
         </div>
       )}
 

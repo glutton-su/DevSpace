@@ -37,6 +37,11 @@ const SnippetDetail = () => {
       const snippetData = response.codeSnippet || response.snippet || response.data || response;
       console.log('Snippet data:', snippetData);
       
+      // Transform tags if they exist
+      if (snippetData.tags) {
+        snippetData.tags = snippetData.tags.map(tag => tag.name || tag);
+      }
+      
       setSnippet(snippetData);
     } catch (error) {
       console.error('Error fetching snippet:', error);

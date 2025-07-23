@@ -155,6 +155,7 @@ const Create = () => {
         title: formData.title,
         content: formData.code,
         language: formData.language,
+        tags: formData.tags,
         filePath: uploadedFile ? uploadedFile.name : null
       };
       

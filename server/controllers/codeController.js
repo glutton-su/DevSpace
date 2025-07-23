@@ -5,12 +5,13 @@ const {
   ProjectCollaborator,
   CodeSnippetCollaborator,
   Star,
+  Tag,
 } = require("../models");
 const { Op } = require("sequelize");
 
 const createCodeSnippet = async (req, res) => {
   try {
-    const { projectId, title, content, language, filePath } = req.body;
+    const { projectId, title, content, language, filePath, tags } = req.body;
 
     const project = await Project.findByPk(projectId);
 
@@ -41,9 +42,29 @@ const createCodeSnippet = async (req, res) => {
       filePath,
     });
 
+    // Handle tags if provided
+    if (tags && Array.isArray(tags) && tags.length > 0) {
+      for (const tagName of tags) {
+        if (tagName.trim()) {
+          // Find or create tag
+          const [tag] = await Tag.findOrCreate({
+            where: { name: tagName.trim().toLowerCase() }
+          });
+          
+          // Associate tag with snippet
+          await codeSnippet.addTag(tag);
+        }
+      }
+    }
+
+    // Fetch the snippet with tags included
+    const snippetWithTags = await CodeSnippet.findByPk(codeSnippet.id, {
+      include: [{ model: Tag, as: 'tags' }]
+    });
+
     res.status(201).json({
       message: "Code snippet created successfully",
-      codeSnippet,
+      codeSnippet: snippetWithTags,
     });
   } catch (error) {
     console.error("Create code snippet error:", error);
@@ -121,6 +142,11 @@ const getCodeSnippetById = async (req, res) => {
             },
           ],
         },
+        {
+          model: Tag,
+          as: 'tags',
+          attributes: ['name']
+        }
       ],
     });
 
@@ -160,7 +186,7 @@ const getCodeSnippetById = async (req, res) => {
 const updateCodeSnippet = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, content, language, filePath } = req.body;
+    const { title, content, language, filePath, tags } = req.body;
 
     const codeSnippet = await CodeSnippet.findByPk(id, {
       include: [{ model: Project, as: "project" }],
@@ -192,9 +218,36 @@ const updateCodeSnippet = async (req, res) => {
       filePath: filePath !== undefined ? filePath : codeSnippet.filePath,
     });
 
+    // Handle tags update if provided
+    if (tags && Array.isArray(tags)) {
+      // Remove existing tags
+      await codeSnippet.setTags([]);
+      
+      // Add new tags
+      for (const tagName of tags) {
+        if (tagName.trim()) {
+          // Find or create tag
+          const [tag] = await Tag.findOrCreate({
+            where: { name: tagName.trim().toLowerCase() }
+          });
+          
+          // Associate tag with snippet
+          await codeSnippet.addTag(tag);
+        }
+      }
+    }
+
+    // Fetch the updated snippet with tags included
+    const updatedSnippet = await CodeSnippet.findByPk(id, {
+      include: [
+        { model: Project, as: "project" },
+        { model: Tag, as: 'tags', attributes: ['name'] }
+      ]
+    });
+
     res.json({
       message: "Code snippet updated successfully",
-      codeSnippet,
+      codeSnippet: updatedSnippet,
     });
   } catch (error) {
     console.error("Update code snippet error:", error);
@@ -428,6 +481,10 @@ const getUserOwnedSnippets = async (req, res) => {
           as: 'owner',
           attributes: ['id', 'username', 'avatarUrl', 'fullName']
         }]
+      }, {
+        model: Tag,
+        as: 'tags',
+        attributes: ['name']
       }],
       order: [['updated_at', 'DESC']],
       limit: parseInt(limit),
@@ -597,6 +654,11 @@ const getUserForkedSnippets = async (req, res) => {
               attributes: ['id', 'username', 'avatarUrl', 'fullName']
             }]
           }]
+        },
+        {
+          model: Tag,
+          as: 'tags',
+          attributes: ['name']
         }
       ],
       order: [['updated_at', 'DESC']],
