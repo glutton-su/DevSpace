@@ -134,6 +134,8 @@ const getCodeSnippetById = async (req, res) => {
         return res.status(401).json({ message: "Authentication required" });
       }
 
+      // For forked snippets, check if the current user is the owner of the project
+      // (i.e., they forked this snippet into their own project)
       const hasAccess =
         codeSnippet.project.userId === req.user.id ||
         (await ProjectCollaborator.findOne({

@@ -20,7 +20,7 @@ const {
   removeSnippetCollaborator,
   getSnippetCollaborators,
 } = require("../controllers/codeController");
-const { auth } = require("../middleware/auth");
+const { auth, optionalAuth } = require("../middleware/auth");
 const { validate } = require("../middleware/validation");
 
 const router = express.Router();
@@ -62,7 +62,7 @@ router.get("/public", (req, res) => {
 router.get("/public/:id", getPublicCodeSnippet);
 
 // Get code snippet by ID (MUST come after specific routes)
-router.get("/:id", getCodeSnippetById);
+router.get("/:id", optionalAuth, getCodeSnippetById);
 
 // Update code snippet
 router.put("/:id", auth, updateCodeSnippet);

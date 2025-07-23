@@ -19,7 +19,6 @@ import {
   Eye,
   GitFork,
   Settings,
-  TrendingUp,
   Award
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -34,7 +33,7 @@ const Profile = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [languageStats, setLanguageStats] = useState([]);
   const [snippetStats, setSnippetStats] = useState({ snippetCount: 0, forkedCount: 0, totalSnippets: 0 });
-  const [tabCounts, setTabCounts] = useState({ snippets: 0, forked: 0, activity: 0 });
+  const [tabCounts, setTabCounts] = useState({ snippets: 0, forked: 0 });
 
   const isOwnProfile = !username || username === currentUser?.username;
 
@@ -90,8 +89,7 @@ const Profile = () => {
         // Get user's forked snippets
         response = await snippetAPI.getUserForkedSnippets();
       } else {
-        // For activity tab, show owned snippets for now
-        response = await snippetAPI.getUserOwnedSnippets();
+        return;
       }
       
       setSnippets(response.snippets || response.data || []);
@@ -191,8 +189,7 @@ const Profile = () => {
 
   const tabs = [
     { id: 'snippets', label: 'Snippets', count: tabCounts.snippets || snippetStats.snippetCount },
-    { id: 'forked', label: 'Forked', count: tabCounts.forked },
-    { id: 'activity', label: 'Activity', count: tabCounts.activity || user?.stats?.totalProjects || 0 }
+    { id: 'forked', label: 'Forked', count: tabCounts.forked }
   ];
 
   if (!user) {
@@ -447,22 +444,6 @@ const Profile = () => {
                       )}
                     </div>
                   )}
-                </div>
-              )}
-
-              {/* Activity tab placeholder */}
-              {activeTab === 'activity' && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-200 dark:bg-dark-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <TrendingUp className="h-8 w-8 text-gray-400 dark:text-dark-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No recent activity</h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {isOwnProfile 
-                      ? "You haven't been active yet."
-                      : "This user hasn't been active yet."
-                    }
-                  </p>
                 </div>
               )}
             </div>
