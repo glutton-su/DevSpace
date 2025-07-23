@@ -411,6 +411,10 @@ const getUserOwnedSnippets = async (req, res) => {
       ];
     }
 
+    // Add condition to exclude forked snippets from owned snippets
+    whereClause.forkedFromSnippet = null;
+    whereClause.forkedFromProject = null;
+
     const snippets = await CodeSnippet.findAndCountAll({
       where: whereClause,
       include: [{
@@ -598,8 +602,36 @@ const getUserForkedSnippets = async (req, res) => {
       offset: offset
     });
 
+    // Add star data to forked snippets like in other functions
+    const enrichedSnippets = await Promise.all(forkedSnippets.rows.map(async (snippet) => {
+      const snippetData = snippet.toJSON();
+      
+      try {
+        // Get actual star count
+        const starCount = await Star.count({
+          where: { codeSnippetId: snippet.id }
+        });
+        
+        snippetData.starCount = starCount;
+        
+        // Check user's star status
+        const userStar = await Star.findOne({
+          where: { userId: req.user.id, codeSnippetId: snippet.id }
+        });
+        
+        snippetData.isStarred = !!userStar;
+      } catch (error) {
+        console.error('Error enriching forked snippet:', snippet.id, error);
+        // Fallback to default values
+        snippetData.starCount = 0;
+        snippetData.isStarred = false;
+      }
+      
+      return snippetData;
+    }));
+
     res.json({ 
-      snippets: forkedSnippets.rows,
+      snippets: enrichedSnippets,
       total: forkedSnippets.count,
       page: parseInt(page),
       totalPages: Math.ceil(forkedSnippets.count / parseInt(limit))
