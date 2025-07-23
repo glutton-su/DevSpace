@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { snippetAPI } from '../services/api';
 import SnippetCard from '../components/features/SnippetCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { normalizeSnippets } from '../utils/dataUtils';
 import { 
   Plus, 
   Search, 
@@ -61,6 +62,9 @@ const Projects = () => {
       if (!Array.isArray(filteredSnippets)) {
         filteredSnippets = [];
       }
+
+      // Normalize the snippets data (especially tags)
+      filteredSnippets = normalizeSnippets(filteredSnippets);
 
       // Apply search filter (client-side backup if not handled by backend)
       if (searchQuery) {

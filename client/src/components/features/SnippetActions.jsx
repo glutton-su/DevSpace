@@ -1,9 +1,20 @@
 import { useState } from 'react';
-import { Star, GitFork } from 'lucide-react';
+import { Star, GitFork, Edit } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const SnippetActions = ({ snippet, onStar, onFork }) => {
   const [isStarred, setIsStarred] = useState(snippet?.isStarred || false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Check if current user owns this snippet
+  const isOwner = user && snippet?.project && snippet.project.userId === user.id;
+
+  const handleEdit = () => {
+    navigate(`/snippet/${snippet.id}/edit`);
+  };
 
   const handleStar = async () => {
     try {
@@ -33,6 +44,18 @@ const SnippetActions = ({ snippet, onStar, onFork }) => {
     <div className="flex items-center justify-between pt-4 border-t border-dark-700">
       {/* Actions */}
       <div className="flex items-center space-x-4">
+        {/* Edit button - only for owners */}
+        {isOwner && (
+          <button
+            onClick={handleEdit}
+            className="flex items-center space-x-1 text-dark-400 hover:text-blue-500 transition-colors"
+            title="Edit snippet"
+          >
+            <Edit className="h-4 w-4" />
+            <span className="text-sm">Edit</span>
+          </button>
+        )}
+
         {/* Star */}
         <button
           onClick={handleStar}

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { snippetAPI } from '../services/api';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import SnippetCard from '../components/features/SnippetCard';
+import { normalizeSnippets } from '../utils/dataUtils';
 import { 
   Plus, 
   Users, 
@@ -34,7 +35,9 @@ const Collaborate = () => {
       
       if (response && response.snippets && Array.isArray(response.snippets)) {
         console.log('✅ Setting snippets:', response.snippets.length, 'items');
-        setSnippets(response.snippets);
+        // Normalize the snippets data (especially tags)
+        const normalizedSnippets = normalizeSnippets(response.snippets);
+        setSnippets(normalizedSnippets);
       } else {
         console.warn('⚠️  Invalid response format, falling back to empty array');
         setSnippets([]);

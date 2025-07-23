@@ -126,18 +126,21 @@ const SnippetCard = ({ snippet, onStar, onFork, showFullCode = false, showCollab
       {/* Tags */}
       {snippet.tags && snippet.tags.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
-          {snippet.tags.slice(0, 3).map((tag, index) => (
-            <span
-              key={index}
-              className="px-3 py-1 bg-primary-600/20 text-primary-400 text-xs rounded-full border border-primary-600/30 hover:bg-primary-600/30 transition-colors cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/search?tag=${tag}`);
-              }}
-            >
-              #{tag}
-            </span>
-          ))}
+          {snippet.tags.slice(0, 3).map((tag, index) => {
+            const tagName = typeof tag === 'string' ? tag : tag.name || tag;
+            return (
+              <span
+                key={index}
+                className="px-3 py-1 bg-primary-600/20 text-primary-400 text-xs rounded-full border border-primary-600/30 hover:bg-primary-600/30 transition-colors cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/search?tag=${tagName}`);
+                }}
+              >
+                #{tagName}
+              </span>
+            );
+          })}
           {snippet.tags.length > 3 && (
             <span className="px-3 py-1 bg-gray-600/20 text-gray-400 text-xs rounded-full border border-gray-600/30">
               +{snippet.tags.length - 3} more

@@ -8,6 +8,7 @@ import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import Dashboard from './pages/Dashboard';
 import Create from './pages/Create';
+import EditSnippet from './pages/EditSnippet';
 import Collaborate from './pages/Collaborate';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
@@ -124,6 +125,11 @@ function AppContent() {
           <Route path="/snippet/:id" element={
             <ProtectedRoute>
               <SnippetDetail />
+            </ProtectedRoute>
+          } />
+          <Route path="/snippet/:id/edit" element={
+            <ProtectedRoute>
+              <EditSnippet />
             </ProtectedRoute>
           } />
           <Route path="/collaborate" element={

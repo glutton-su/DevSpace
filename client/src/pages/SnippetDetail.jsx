@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import SnippetActions from '../components/features/SnippetActions';
+import { normalizeSnippet } from '../utils/dataUtils';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { 
@@ -37,12 +38,10 @@ const SnippetDetail = () => {
       const snippetData = response.codeSnippet || response.snippet || response.data || response;
       console.log('Snippet data:', snippetData);
       
-      // Transform tags if they exist
-      if (snippetData.tags) {
-        snippetData.tags = snippetData.tags.map(tag => tag.name || tag);
-      }
+      // Normalize the snippet data (especially tags)
+      const normalizedSnippet = normalizeSnippet(snippetData);
       
-      setSnippet(snippetData);
+      setSnippet(normalizedSnippet);
     } catch (error) {
       console.error('Error fetching snippet:', error);
       console.error('Error details:', error.response?.data);
@@ -237,15 +236,18 @@ const SnippetDetail = () => {
               <div className="card">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tags</h3>
                 <div className="flex flex-wrap gap-2">
-                  {snippet.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-gray-100 dark:bg-dark-700 text-gray-700 dark:text-gray-300 text-sm rounded-full cursor-pointer hover:bg-gray-200 dark:hover:bg-dark-600 transition-colors"
-                      onClick={() => navigate(`/search?tag=${tag}`)}
-                    >
-                      #{tag}
-                    </span>
-                  ))}
+                  {snippet.tags.map((tag, index) => {
+                    const tagName = typeof tag === 'string' ? tag : tag.name || tag;
+                    return (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-gray-100 dark:bg-dark-700 text-gray-700 dark:text-gray-300 text-sm rounded-full cursor-pointer hover:bg-gray-200 dark:hover:bg-dark-600 transition-colors"
+                        onClick={() => navigate(`/search?tag=${tagName}`)}
+                      >
+                        #{tagName}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             )}

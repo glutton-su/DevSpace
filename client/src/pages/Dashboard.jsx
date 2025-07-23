@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { snippetAPI } from '../services/api';
 import SnippetCard from '../components/features/SnippetCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { normalizeSnippets } from '../utils/dataUtils';
 import { 
   Search, 
   Filter, 
@@ -52,6 +53,9 @@ const Dashboard = () => {
       if (!Array.isArray(filteredSnippets)) {
         filteredSnippets = [];
       }
+      
+      // Normalize the snippets data (especially tags)
+      filteredSnippets = normalizeSnippets(filteredSnippets);
       
       switch (sortBy) {
         case 'popular':
