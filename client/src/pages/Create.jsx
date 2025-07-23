@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { snippetAPI, projectAPI } from '../services/api';
 import CodeEditor from '../components/common/CodeEditor';
-import { Upload, Code, Save, Eye, Globe, Lock, Tag, X } from 'lucide-react';
+import { Upload, Code, Save, Eye, Globe, Lock, Tag, X, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Create = () => {
@@ -156,7 +156,10 @@ const Create = () => {
         content: formData.code,
         language: formData.language,
         tags: formData.tags,
-        filePath: uploadedFile ? uploadedFile.name : null
+        filePath: uploadedFile ? uploadedFile.name : null,
+        isPublic: formData.isPublic,
+        allowCollaboration: formData.allowCollaboration,
+        allowFork: formData.allowFork
       };
       
       const result = await snippetAPI.createSnippet(snippetData);
@@ -429,12 +432,30 @@ const Create = () => {
                       <input
                         type="checkbox"
                         checked={formData.allowCollaboration}
-                        onChange={(e) => setFormData(prev => ({ ...prev, allowCollaboration: e.target.checked }))}
+                        onChange={(e) => {
+                          const newValue = e.target.checked;
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            allowCollaboration: newValue,
+                            // Auto-enable public when collaboration is enabled
+                            isPublic: newValue ? true : prev.isPublic
+                          }));
+                        }}
                         className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-gray-300 dark:bg-dark-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
                     </label>
                   </div>
+
+                  {/* Collaboration Note */}
+                  {formData.allowCollaboration && (
+                    <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        <Users className="inline h-4 w-4 mr-1" />
+                        Collaborative snippets are automatically made public so others can discover and contribute to them.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 

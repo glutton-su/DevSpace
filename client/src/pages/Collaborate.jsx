@@ -27,24 +27,46 @@ const Collaborate = () => {
   const fetchCollaborativeSnippets = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Fetching collaborative snippets...');
       const response = await snippetAPI.getCollaborativeSnippets();
-      setSnippets(response);
+      console.log('📦 API Response:', response);
+      console.log('📊 Response snippets:', response.snippets);
+      
+      if (response && response.snippets && Array.isArray(response.snippets)) {
+        console.log('✅ Setting snippets:', response.snippets.length, 'items');
+        setSnippets(response.snippets);
+      } else {
+        console.warn('⚠️  Invalid response format, falling back to empty array');
+        setSnippets([]);
+      }
     } catch (error) {
-      console.error('Error fetching collaborative snippets:', error);
+      console.error('❌ Error fetching collaborative snippets:', error);
       toast.error('Failed to load collaborative snippets');
+      setSnippets([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredSnippets = snippets.filter(snippet => {
-    const matchesSearch = snippet.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (snippet.description && snippet.description.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredSnippets = (() => {
+    console.log('🔄 Current snippets state:', snippets);
+    console.log('🔄 Is snippets an array?', Array.isArray(snippets));
     
-    const matchesFilter = filterLanguage === 'all' || snippet.language === filterLanguage;
+    if (!Array.isArray(snippets)) {
+      console.warn('⚠️  snippets is not an array, returning empty array');
+      return [];
+    }
     
-    return matchesSearch && matchesFilter;
-  });
+    return snippets.filter(snippet => {
+      console.log('🔍 Filtering snippet:', snippet);
+      const matchesSearch = snippet.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           (snippet.description && snippet.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesFilter = filterLanguage === 'all' || snippet.language === filterLanguage;
+      
+      return matchesSearch && matchesFilter;
+    });
+  })();
 
   const languages = ['all', ...new Set(snippets.map(s => s.language).filter(Boolean))];
 
@@ -60,12 +82,20 @@ const Collaborate = () => {
             </p>
           </div>
           
-          <div className="mt-4 lg:mt-0">
+          <div className="mt-4 lg:mt-0 flex items-center space-x-4">
+            <button
+              onClick={fetchCollaborativeSnippets}
+              disabled={loading}
+              className="btn-secondary flex items-center space-x-2"
+            >
+              <Code className="h-4 w-4" />
+              <span>Refresh</span>
+            </button>
             <Link
               to="/create"
-              className="btn-primary"
+              className="btn-primary flex items-center space-x-2"
             >
-              <Plus className="h-5 w-5 mr-2" />
+              <Plus className="h-5 w-5" />
               <span>Create Snippet</span>
             </Link>
           </div>
