@@ -46,32 +46,16 @@ const Moderation = () => {
         }
       });
       
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-      
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`Failed to fetch users: ${response.status} - ${errorText}`);
+        throw new Error('Failed to fetch users');
       }
       
-      const responseText = await response.text();
-      console.log('Raw response:', responseText);
-      
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('JSON parse error:', parseError);
-        console.error('Response text that failed to parse:', responseText);
-        throw new Error('Invalid JSON response from server');
-      }
-      
+      const data = await response.json();
       setUsers(data.users || []);
       setTotalPages(data.totalPages || 1);
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast.error(`Failed to load users: ${error.message}`);
+      toast.error('Failed to load users');
       setUsers([]);
     } finally {
       setLoading(false);
