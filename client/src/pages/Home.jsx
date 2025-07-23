@@ -170,7 +170,8 @@ const Home = () => {
                 <SnippetCard
                   key={snippet.id}
                   snippet={snippet}
-                  onLike={() => snippetAPI.toggleLike(snippet.id)}
+                  onStar={() => snippetAPI.toggleStar(snippet.id)}
+                  onFork={() => snippetAPI.forkSnippet(snippet.id)}
                 />
               ))}
             </div>

@@ -131,11 +131,6 @@ export const snippetAPI = {
     return response.data;
   },
 
-  toggleLike: async (id) => {
-    const response = await authAPI.post(`/code/${id}/like`);
-    return response.data;
-  },
-
   toggleStar: async (id) => {
     const response = await authAPI.post(`/code/${id}/star`);
     return response.data;
@@ -188,6 +183,11 @@ export const userAPI = {
 
   getUserProjects: async (username) => {
     const response = await authAPI.get(`/users/${username}/projects`);
+    return response.data;
+  },
+
+  getUserSnippetStats: async (username) => {
+    const response = await authAPI.get(`/users/${username}/snippet-stats`);
     return response.data;
   },
 

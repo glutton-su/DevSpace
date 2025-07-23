@@ -110,21 +110,6 @@ const Projects = () => {
     }
   };
 
-  const handleLike = async (snippetId) => {
-    try {
-      await snippetAPI.toggleLike(snippetId);
-      setSnippets(prev => prev.map(snippet => 
-        snippet.id === snippetId 
-          ? { ...snippet, likeCount: (snippet.likeCount || 0) + (snippet.isLiked ? -1 : 1), isLiked: !snippet.isLiked }
-          : snippet
-      ));
-      toast.success('Snippet liked!');
-    } catch (error) {
-      console.error('Error liking snippet:', error);
-      toast.error('Failed to like snippet');
-    }
-  };
-
   const handleFork = async (snippetId) => {
     try {
       const response = await snippetAPI.forkSnippet(snippetId);
@@ -317,7 +302,6 @@ const Projects = () => {
                 key={snippet.id}
                 snippet={snippet}
                 onStar={handleStar}
-                onLike={handleLike}
                 onFork={handleFork}
                 onDelete={handleDelete}
                 onArchive={handleArchive}

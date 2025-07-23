@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { snippetAPI } from '../services/api';
+import { snippetAPI, userAPI } from '../services/api';
 import SnippetCard from '../components/features/SnippetCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { 
@@ -17,7 +17,6 @@ import {
   Code,
   Users,
   Eye,
-  Heart,
   GitFork,
   Settings,
   TrendingUp,
@@ -34,76 +33,141 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState('snippets');
   const [isFollowing, setIsFollowing] = useState(false);
   const [languageStats, setLanguageStats] = useState([]);
+  const [snippetStats, setSnippetStats] = useState({ snippetCount: 0, totalSnippets: 0 });
+  const [tabCounts, setTabCounts] = useState({ snippets: 0, starred: 0, activity: 0 });
 
   const isOwnProfile = !username || username === currentUser?.username;
 
   useEffect(() => {
     fetchUserData();
-    fetchUserSnippets();
-    fetchLanguageStats();
   }, [username]);
+
+  useEffect(() => {
+    fetchLanguageStats();
+  }, [username, currentUser?.username]);
+
+  useEffect(() => {
+    fetchUserSnippets();
+  }, [username, activeTab]);
 
   const fetchUserData = async () => {
     try {
       if (isOwnProfile) {
-        setUser(currentUser);
+        // For own profile, get the current user data which should include stats
+        const profileResponse = await userAPI.getUserProfile(currentUser?.username);
+        setUser({
+          ...currentUser,
+          ...profileResponse.user,
+          stats: profileResponse.stats
+        });
       } else {
-        // Mock user data for demo
-        const mockUser = {
-          id: 2,
-          username: username,
-          name: 'Jane Smith',
-          email: 'jane@example.com',
-          avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&dpr=2',
-          bio: 'Full-stack developer passionate about React, Node.js, and machine learning. Love building scalable applications and sharing knowledge with the community.',
-          location: 'San Francisco, CA',
-          website: 'https://janesmith.dev',
-          github: 'janesmith',
-          twitter: 'jane_codes',
-          linkedin: 'jane-smith-dev',
-          joinDate: '2023-06-15',
-          snippetsCount: 18,
-          collaborationsCount: 8,
-          followersCount: 245,
-          followingCount: 89,
-          starsReceived: 156,
-          totalViews: 2840,
-          contributionsCount: 42
-        };
-        setUser(mockUser);
+        // For other users, fetch their profile
+        const profileResponse = await userAPI.getUserProfile(username);
+        setUser({
+          ...profileResponse.user,
+          stats: profileResponse.stats
+        });
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
       toast.error('Failed to load user profile');
+      // Fallback to current user data for own profile
+      if (isOwnProfile) {
+        setUser(currentUser);
+      }
     }
   };
 
   const fetchUserSnippets = async () => {
     try {
       setLoading(true);
-      const response = await snippetAPI.getSnippets();
-      // Filter snippets by user (mock filtering)
-      const userSnippets = response.data.filter(snippet => 
-        isOwnProfile ? snippet.author.id === currentUser?.id : snippet.author.username === username
-      );
-      setSnippets(userSnippets);
+      let response;
+      
+      if (activeTab === 'snippets') {
+        // Get user's own snippets
+        response = await snippetAPI.getUserOwnedSnippets();
+      } else if (activeTab === 'starred') {
+        // Get user's starred snippets
+        response = await snippetAPI.getUserStarredSnippets();
+      } else {
+        // For activity tab, show owned snippets for now
+        response = await snippetAPI.getUserOwnedSnippets();
+      }
+      
+      setSnippets(response.snippets || response.data || []);
+      
+      // Update tab counts based on the response
+      if (response.total !== undefined) {
+        setTabCounts(prev => ({
+          ...prev,
+          [activeTab]: response.total
+        }));
+      }
     } catch (error) {
       console.error('Error fetching user snippets:', error);
+      toast.error('Failed to load snippets');
+      setSnippets([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleStar = async (snippetId) => {
+    try {
+      const response = await snippetAPI.toggleStar(snippetId);
+      setSnippets(prev => prev.map(snippet => 
+        snippet.id === snippetId 
+          ? { 
+              ...snippet, 
+              starCount: response.starCount !== undefined ? response.starCount : (snippet.starCount || 0) + (snippet.isStarred ? -1 : 1), 
+              isStarred: response.isStarred !== undefined ? response.isStarred : !snippet.isStarred 
+            }
+          : snippet
+      ));
+      const isStarred = response.isStarred !== undefined ? response.isStarred : !snippets.find(s => s.id === snippetId)?.isStarred;
+      toast.success(isStarred ? 'Snippet starred!' : 'Snippet unstarred!');
+    } catch (error) {
+      console.error('Error starring snippet:', error);
+      toast.error('Failed to star snippet');
+    }
+  };
+
+  const handleFork = async (snippetId) => {
+    try {
+      await snippetAPI.forkSnippet(snippetId);
+      toast.success('Snippet forked successfully!');
+      // Refresh user stats after forking
+      fetchUserData();
+    } catch (error) {
+      console.error('Error forking snippet:', error);
+      toast.error('Failed to fork snippet');
+    }
+  };
+
   const fetchLanguageStats = async () => {
-    // Mock language statistics
-    const mockStats = [
-      { language: 'JavaScript', count: 12, percentage: 35, color: '#f7df1e' },
-      { language: 'Python', count: 8, percentage: 25, color: '#3776ab' },
-      { language: 'TypeScript', count: 6, percentage: 18, color: '#3178c6' },
-      { language: 'CSS', count: 4, percentage: 12, color: '#1572b6' },
-      { language: 'HTML', count: 3, percentage: 10, color: '#e34f26' }
-    ];
-    setLanguageStats(mockStats);
+    try {
+      const targetUsername = username || currentUser?.username;
+      if (!targetUsername) return;
+      
+      const response = await userAPI.getUserSnippetStats(targetUsername);
+      setLanguageStats(response.languageStats || []);
+      setSnippetStats({
+        snippetCount: response.snippetCount || 0,
+        totalSnippets: response.totalSnippets || 0
+      });
+      
+      // Update snippets tab count
+      setTabCounts(prev => ({
+        ...prev,
+        snippets: response.snippetCount || 0
+      }));
+    } catch (error) {
+      console.error('Error fetching language stats:', error);
+      // Fallback to empty array instead of mock data
+      setLanguageStats([]);
+      setSnippetStats({ snippetCount: 0, totalSnippets: 0 });
+      setTabCounts(prev => ({ ...prev, snippets: 0 }));
+    }
   };
 
   const handleFollow = async () => {
@@ -124,9 +188,9 @@ const Profile = () => {
   };
 
   const tabs = [
-    { id: 'snippets', label: 'Snippets', count: user?.snippetsCount || 0 },
-    { id: 'starred', label: 'Starred', count: user?.starsReceived || 0 },
-    { id: 'activity', label: 'Activity', count: user?.contributionsCount || 0 }
+    { id: 'snippets', label: 'Snippets', count: tabCounts.snippets || snippetStats.snippetCount },
+    { id: 'starred', label: 'Starred', count: tabCounts.starred },
+    { id: 'activity', label: 'Activity', count: tabCounts.activity || user?.stats?.totalProjects || 0 }
   ];
 
   if (!user) {
@@ -267,7 +331,7 @@ const Profile = () => {
                     <Code className="h-4 w-4 text-primary-500" />
                     <span className="text-gray-700 dark:text-gray-300">Snippets</span>
                   </div>
-                  <span className="font-semibold text-gray-900 dark:text-white">{user.snippetsCount}</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{snippetStats.snippetCount}</span>
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -275,7 +339,7 @@ const Profile = () => {
                     <Star className="h-4 w-4 text-yellow-500" />
                     <span className="text-gray-700 dark:text-gray-300">Stars</span>
                   </div>
-                  <span className="font-semibold text-gray-900 dark:text-white">{user.starsReceived}</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{user?.stats?.totalStarsReceived || 0}</span>
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -283,23 +347,15 @@ const Profile = () => {
                     <GitFork className="h-4 w-4 text-green-500" />
                     <span className="text-gray-700 dark:text-gray-300">Forks</span>
                   </div>
-                  <span className="font-semibold text-gray-900 dark:text-white">12</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{user?.stats?.totalForksReceived || 0}</span>
                 </div>
                 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Users className="h-4 w-4 text-secondary-500" />
-                    <span className="text-gray-700 dark:text-gray-300">Followers</span>
+                    <span className="text-gray-700 dark:text-gray-300">Projects</span>
                   </div>
-                  <span className="font-semibold text-gray-900 dark:text-white">{user.followersCount}</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Eye className="h-4 w-4 text-purple-500" />
-                    <span className="text-gray-700 dark:text-gray-300">Views</span>
-                  </div>
-                  <span className="font-semibold text-gray-900 dark:text-white">{user.totalViews}</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{user?.stats?.totalProjects || 0}</span>
                 </div>
               </div>
             </div>
@@ -403,7 +459,8 @@ const Profile = () => {
                         <SnippetCard
                           key={snippet.id}
                           snippet={snippet}
-                          onLike={() => snippetAPI.toggleLike(snippet.id)}
+                          onStar={handleStar}
+                          onFork={handleFork}
                         />
                       ))}
                     </div>

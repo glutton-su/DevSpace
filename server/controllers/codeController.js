@@ -5,7 +5,6 @@ const {
   ProjectCollaborator,
   CodeSnippetCollaborator,
   Star,
-  Like,
 } = require("../models");
 const { Op } = require("sequelize");
 
@@ -603,34 +602,6 @@ const toggleSnippetStar = async (req, res) => {
   }
 };
 
-// Toggle like on code snippet
-const toggleSnippetLike = async (req, res) => {
-  try {
-    const snippetId = req.params.id;
-    const userId = req.user.id;
-
-    const snippet = await CodeSnippet.findByPk(snippetId);
-    if (!snippet) {
-      return res.status(404).json({ message: 'Code snippet not found' });
-    }
-
-    const existingLike = await Like.findOne({
-      where: { userId, codeSnippetId: snippetId }
-    });
-
-    if (existingLike) {
-      await existingLike.destroy();
-      res.json({ message: 'Like removed', isLiked: false });
-    } else {
-      await Like.create({ userId, codeSnippetId: snippetId });
-      res.json({ message: 'Like added', isLiked: true });
-    }
-  } catch (error) {
-    console.error('Error toggling like:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
 // Fork code snippet
 const forkCodeSnippet = async (req, res) => {
   try {
@@ -735,44 +706,33 @@ const getPublicSnippets = async (req, res) => {
 
     console.log('Found snippets:', snippets.rows.length);
 
-    // Add star/like data to snippets
+    // Add star data to snippets
     const enrichedSnippets = await Promise.all(snippets.rows.map(async (snippet) => {
       const snippetData = snippet.toJSON();
       
       try {
-        // Get actual star and like counts
+        // Get actual star count
         const starCount = await Star.count({
-          where: { codeSnippetId: snippet.id }
-        });
-        const likeCount = await Like.count({
           where: { codeSnippetId: snippet.id }
         });
         
         snippetData.starCount = starCount;
-        snippetData.likeCount = likeCount;
         
-        // If user is authenticated, check their star/like status
+        // If user is authenticated, check their star status
         if (req.user) {
           const userStar = await Star.findOne({
             where: { userId: req.user.id, codeSnippetId: snippet.id }
           });
-          const userLike = await Like.findOne({
-            where: { userId: req.user.id, codeSnippetId: snippet.id }
-          });
           
           snippetData.isStarred = !!userStar;
-          snippetData.isLiked = !!userLike;
         } else {
           snippetData.isStarred = false;
-          snippetData.isLiked = false;
         }
       } catch (error) {
         console.error('Error enriching snippet:', snippet.id, error);
         // Fallback to default values
         snippetData.starCount = 0;
-        snippetData.likeCount = 0;
         snippetData.isStarred = false;
-        snippetData.isLiked = false;
       }
       
       return snippetData;
@@ -905,7 +865,6 @@ module.exports = {
   getUserStarredSnippets,
   getUserForkedSnippets,
   toggleSnippetStar,
-  toggleSnippetLike,
   forkCodeSnippet,
   getPublicSnippets,
   addSnippetCollaborator,

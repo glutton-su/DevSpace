@@ -15,7 +15,6 @@ const {
   getUserStarredSnippets,
   getUserForkedSnippets,
   toggleSnippetStar,
-  toggleSnippetLike,
   forkCodeSnippet,
   addSnippetCollaborator,
   removeSnippetCollaborator,
@@ -77,9 +76,8 @@ router.patch("/:id/share", auth, shareCodeSnippet);
 // Update snippet visibility
 router.patch("/:id/visibility", auth, updateSnippetVisibility);
 
-// Star/Like/Fork functionality
+// Star/Fork functionality
 router.post("/:id/star", auth, require("../controllers/codeController").toggleSnippetStar);
-router.post("/:id/like", auth, require("../controllers/codeController").toggleSnippetLike);
 router.post("/:id/fork", auth, require("../controllers/codeController").forkCodeSnippet);
 
 // Get language statistics for a project

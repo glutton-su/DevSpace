@@ -11,7 +11,6 @@ import {
   Plus, 
   TrendingUp, 
   Clock, 
-  Heart,
   Grid,
   List,
   ChevronDown,
@@ -95,26 +94,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleLike = async (snippetId) => {
-    try {
-      const response = await snippetAPI.toggleLike(snippetId);
-      setSnippets(prev => prev.map(snippet => 
-        snippet.id === snippetId 
-          ? { 
-              ...snippet, 
-              likeCount: response.likeCount !== undefined ? response.likeCount : (snippet.likeCount || 0) + (snippet.isLiked ? -1 : 1), 
-              isLiked: response.isLiked !== undefined ? response.isLiked : !snippet.isLiked 
-            }
-          : snippet
-      ));
-      const isLiked = response.isLiked !== undefined ? response.isLiked : !snippets.find(s => s.id === snippetId)?.isLiked;
-      toast.success(isLiked ? 'Snippet liked!' : 'Like removed!');
-    } catch (error) {
-      console.error('Error liking snippet:', error);
-      toast.error('Failed to like snippet');
-    }
-  };
-
   const handleFork = async (snippetId) => {
     try {
       await snippetAPI.forkSnippet(snippetId);
@@ -146,7 +125,7 @@ const Dashboard = () => {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {isAuthenticated ? `Welcome back, ${user?.name}!` : 'Discover Snippets'}
+              {isAuthenticated ? `Welcome back, ${user?.username}!` : 'Discover Snippets'}
             </h1>
             <p className="text-gray-600 dark:text-gray-300">
               Explore and share amazing code snippets from the community
@@ -326,7 +305,7 @@ const Dashboard = () => {
           </div>
           <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
             {sortBy === 'recent' && <Clock className="h-4 w-4" />}
-            {sortBy === 'popular' && <Heart className="h-4 w-4" />}
+            {sortBy === 'popular' && <TrendingUp className="h-4 w-4" />}
             {sortBy === 'views' && <TrendingUp className="h-4 w-4" />}
             <span>Sorted by {sortBy}</span>
           </div>
@@ -348,7 +327,6 @@ const Dashboard = () => {
                 key={snippet.id}
                 snippet={snippet}
                 onStar={handleStar}
-                onLike={handleLike}
                 onFork={handleFork}
               />
             ))}

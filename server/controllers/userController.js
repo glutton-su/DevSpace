@@ -234,23 +234,105 @@ const updateUserStats = async (req, res) => {
 
 const followUser = async (req, res) => {
   try {
-    const { username } = req.params;
-
-    const userToFollow = await User.findOne({ where: { username } });
-
-    if (!userToFollow) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (userToFollow.id === req.user.id) {
-      return res.status(400).json({ message: "Cannot follow yourself" });
-    }
-
-    // Note: You'll need to create a Follow model for this functionality
     // This is a placeholder implementation
     res.json({ message: "Follow functionality not implemented yet" });
   } catch (error) {
     console.error("Follow user error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getUserSnippetStats = async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const user = await User.findOne({ where: { username } });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Get snippet count for the user
+    const snippetCount = await CodeSnippet.count({
+      include: [{
+        model: Project,
+        as: 'project',
+        where: { 
+          userId: user.id,
+          // If viewing another user's profile, only count public projects
+          ...((!req.user || req.user.id !== user.id) && { isPublic: true })
+        }
+      }]
+    });
+
+    // Get language statistics
+    const languageStats = await CodeSnippet.findAll({
+      attributes: [
+        'language', 
+        [CodeSnippet.sequelize.fn('COUNT', CodeSnippet.sequelize.col('CodeSnippet.id')), 'count']
+      ],
+      include: [{
+        model: Project,
+        as: 'project',
+        where: { 
+          userId: user.id,
+          // If viewing another user's profile, only count public projects
+          ...((!req.user || req.user.id !== user.id) && { isPublic: true })
+        },
+        attributes: []
+      }],
+      where: {
+        language: { [Op.ne]: null }
+      },
+      group: ['language'],
+      order: [[CodeSnippet.sequelize.fn('COUNT', CodeSnippet.sequelize.col('CodeSnippet.id')), 'DESC']],
+      limit: 10
+    });
+
+    // Calculate percentages and add colors
+    const totalSnippets = languageStats.reduce((sum, lang) => sum + parseInt(lang.dataValues.count), 0);
+    
+    const languageColors = {
+      'JavaScript': '#f7df1e',
+      'TypeScript': '#3178c6', 
+      'Python': '#3776ab',
+      'Java': '#ed8b00',
+      'C++': '#00599c',
+      'C': '#a8b9cc',
+      'C#': '#239120',
+      'PHP': '#777bb4',
+      'Ruby': '#cc342d',
+      'Go': '#00add8',
+      'Rust': '#dea584',
+      'Swift': '#fa7343',
+      'Kotlin': '#7f52ff',
+      'Dart': '#0175c2',
+      'Scala': '#dc322f',
+      'R': '#276dc3',
+      'Perl': '#39457e',
+      'Shell': '#89e051',
+      'HTML': '#e34f26',
+      'CSS': '#1572b6',
+      'SQL': '#e38c00',
+      'JSON': '#000000',
+      'XML': '#ff6600',
+      'YAML': '#cb171e'
+    };
+
+    const formattedLanguageStats = languageStats.map(lang => ({
+      language: lang.language,
+      count: parseInt(lang.dataValues.count),
+      percentage: totalSnippets > 0 ? Math.round((parseInt(lang.dataValues.count) / totalSnippets) * 100) : 0,
+      color: languageColors[lang.language] || '#666666'
+    }));
+
+    res.json({
+      snippetCount,
+      languageStats: formattedLanguageStats,
+      totalSnippets
+    });
+  } catch (error) {
+    console.error("Get user snippet stats error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -261,4 +343,5 @@ module.exports = {
   searchUsers,
   updateUserStats,
   followUser,
+  getUserSnippetStats,
 };

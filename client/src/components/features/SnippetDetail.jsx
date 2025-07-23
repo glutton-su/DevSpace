@@ -46,21 +46,6 @@ const SnippetDetail = () => {
     }
   };
 
-  const handleLike = async () => {
-    try {
-      await snippetAPI.toggleLike(snippet.id);
-      setSnippet(prev => ({
-        ...prev,
-        isLiked: !prev.isLiked,
-        likesCount: prev.isLiked ? (prev.likesCount || 0) - 1 : (prev.likesCount || 0) + 1
-      }));
-      toast.success(snippet.isLiked ? 'Removed like' : 'Snippet liked!');
-    } catch (error) {
-      console.error('Error liking snippet:', error);
-      toast.error('Failed to like snippet');
-    }
-  };
-
   const handleStar = async () => {
     try {
       await snippetAPI.toggleStar(snippet.id);
@@ -364,7 +349,6 @@ const SnippetDetail = () => {
               </h3>
               <SnippetActions
                 snippet={snippet}
-                onLike={handleLike}
                 onStar={handleStar}
                 onFork={handleFork}
                 vertical={true}

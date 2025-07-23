@@ -5,6 +5,7 @@ const {
   searchUsers,
   updateUserStats,
   followUser,
+  getUserSnippetStats,
 } = require("../controllers/userController");
 const { auth } = require("../middleware/auth");
 
@@ -21,6 +22,9 @@ router.get("/:username", getUserProfile);
 
 // Get user projects
 router.get("/:username/projects", getUserProjects);
+
+// Get user snippet statistics
+router.get("/:username/snippet-stats", getUserSnippetStats);
 
 // Follow user
 router.post("/:username/follow", auth, followUser);
