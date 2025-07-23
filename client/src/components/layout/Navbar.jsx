@@ -82,6 +82,8 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-8">
             {navLinks.map(({ path, label, icon: Icon, requireAuth }) => {
               if (requireAuth && !isAuthenticated) return null;
+              // Hide Home link when user is authenticated
+              if (path === '/' && isAuthenticated) return null;
               return (
                 <Link
                   key={path}
@@ -243,6 +245,8 @@ const Navbar = () => {
             <div className="space-y-2">
               {navLinks.map(({ path, label, icon: Icon, requireAuth }) => {
                 if (requireAuth && !isAuthenticated) return null;
+                // Hide Home link when user is authenticated
+                if (path === '/' && isAuthenticated) return null;
                 return (
                   <Link
                     key={path}
