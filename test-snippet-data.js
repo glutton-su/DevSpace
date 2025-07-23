@@ -78,6 +78,11 @@ async function testSnippetEndpoints() {
       console.log(`Snippets count: ${publicData.snippets?.length || 0}`);
       
       if (publicData.snippets && publicData.snippets.length > 0) {
+        console.log('\nAll public snippets:');
+        publicData.snippets.forEach((snippet, index) => {
+          console.log(`${index + 1}. ID: ${snippet.id}, Title: ${snippet.title}, Language: ${snippet.language}`);
+        });
+        
         const snippet = publicData.snippets[0];
         console.log('\nFirst snippet structure:');
         console.log('- ID:', snippet.id);

@@ -40,12 +40,8 @@ const SnippetCard = ({ snippet, onStar, onFork, showFullCode = false }) => {
       return;
     }
     
-    // Navigate to project detail if snippet belongs to a project
-    if (snippet.projectId) {
-      navigate(`/project/${snippet.projectId}`);
-    } else {
-      navigate(`/snippet/${snippet.id}`);
-    }
+    // Navigate to snippet detail page
+    navigate(`/snippet/${snippet.id}`);
   };
   return (
     <div 

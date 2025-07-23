@@ -19,7 +19,7 @@ import {
   Share2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { fileAPI } from '../../services/api';
+import { projectAPI, snippetAPI, fileAPI } from '../../services/api';
 
 const ProjectDetail = () => {
   const { id } = useParams();
@@ -39,93 +39,28 @@ const ProjectDetail = () => {
 
   const fetchProject = async () => {
     try {
-      // Mock project data
-      const mockProject = {
-        id: parseInt(id),
-        name: 'React Component Library',
-        description: 'A comprehensive library of reusable React components with TypeScript support and Storybook documentation.',
-        owner: {
-          id: user?.id,
-          username: user?.username || 'john_doe',
-          name: user?.name || 'John Doe',
-          avatar: user?.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=50&h=50&dpr=2'
-        },
-        languages: ['javascript', 'typescript', 'css'],
-        tags: ['react', 'components', 'ui', 'typescript'],
-        stars: 45,
-        forks: 12,
-        views: 234,
-        snippetsCount: 8,
-        collaborators: 3,
-        isPrivate: false,
-        isArchived: false,
-        allowCollaboration: true,
-        template: 'react',
-        createdAt: '2024-01-10T00:00:00Z',
-        updatedAt: '2024-01-15T12:00:00Z'
-      };
-      
-      setProject(mockProject);
+      const response = await projectAPI.getProject(id);
+      setProject(response.project);
+      setIsStarred(response.project.isStarred || false);
     } catch (error) {
       console.error('Error fetching project:', error);
       toast.error('Failed to load project');
+      // Navigate back if project not found
+      if (error.response?.status === 404) {
+        navigate('/projects');
+      }
     }
   };
 
   const fetchProjectSnippets = async () => {
     try {
       setLoading(true);
-      // Mock snippets for this project
-      const mockSnippets = [
-        {
-          id: 1,
-          title: 'Button Component',
-          description: 'Reusable button component with variants',
-          language: 'javascript',
-          code: `import React from 'react';
-import './Button.css';
-
-const Button = ({ 
-  children, 
-  variant = 'primary', 
-  size = 'medium',
-  disabled = false,
-  onClick,
-  ...props 
-}) => {
-  const className = \`btn btn-\${variant} btn-\${size}\`;
-  
-  return (
-    <button 
-      className={className}
-      disabled={disabled}
-      onClick={onClick}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-};
-
-export default Button;`,
-          author: {
-            id: user?.id,
-            username: user?.username || 'john_doe',
-            name: user?.name || 'John Doe',
-            avatar: user?.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=50&h=50&dpr=2'
-          },
-          tags: ['react', 'component', 'button'],
-          likes: 15,
-          stars: 8,
-          forks: 3,
-          views: 45,
-          createdAt: '2024-01-15T10:30:00Z'
-        }
-      ];
-      
-      setSnippets(mockSnippets);
+      const response = await snippetAPI.getSnippets({ projectId: id });
+      setSnippets(response.snippets || response.data || []);
     } catch (error) {
       console.error('Error fetching project snippets:', error);
+      toast.error('Failed to load snippets');
+      setSnippets([]);
     } finally {
       setLoading(false);
     }
