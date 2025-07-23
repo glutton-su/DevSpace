@@ -23,10 +23,17 @@ const Projects = () => {
   const [snippets, setSnippets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('owned'); // 'all', 'owned', 'starred', 'forked'
+  const [filterType, setFilterType] = useState(user ? 'owned' : 'all'); // Default to 'all' for unauthenticated users
   const [sortBy, setSortBy] = useState('updated');
   const [viewMode, setViewMode] = useState('grid');
   const [showArchived, setShowArchived] = useState(false);
+
+  // Update filter type when user authentication changes
+  useEffect(() => {
+    if (!user && (filterType === 'owned' || filterType === 'starred' || filterType === 'forked')) {
+      setFilterType('all');
+    }
+  }, [user, filterType]);
 
   useEffect(() => {
     fetchSnippets();
@@ -42,19 +49,31 @@ const Projects = () => {
       let response;
       switch (filterType) {
         case 'owned':
+          if (!user) {
+            setSnippets([]);
+            return;
+          }
           response = await snippetAPI.getUserOwnedSnippets(params);
           break;
         case 'starred':
+          if (!user) {
+            setSnippets([]);
+            return;
+          }
           response = await snippetAPI.getUserStarredSnippets(params);
           break;
         case 'forked':
+          if (!user) {
+            setSnippets([]);
+            return;
+          }
           response = await snippetAPI.getUserForkedSnippets(params);
           break;
         case 'all':
           response = await snippetAPI.getPublicSnippets(params);
           break;
         default:
-          response = await snippetAPI.getUserOwnedSnippets(params);
+          response = await snippetAPI.getPublicSnippets(params);
       }
       
       let filteredSnippets = response.snippets || response.data || response;
@@ -165,12 +184,17 @@ const Projects = () => {
     (snippet.tags && snippet.tags.some(tag => tag.name?.toLowerCase().includes(searchQuery.toLowerCase())))
   );
 
-  const filterOptions = [
+  const allFilterOptions = [
     { value: 'all', label: 'All Snippets', icon: Code },
     { value: 'owned', label: 'My Snippets', icon: Code },
     { value: 'starred', label: 'Starred', icon: Star },
     { value: 'forked', label: 'Forked', icon: GitFork }
   ];
+
+  // Filter options based on authentication status
+  const filterOptions = user 
+    ? allFilterOptions 
+    : allFilterOptions.filter(option => option.value === 'all');
 
   return (
     <div className="min-h-screen py-8">
@@ -178,20 +202,31 @@ const Projects = () => {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">My Snippets</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">
+              {user ? 'My Snippets' : 'Code Snippets'}
+            </h1>
             <p className="text-dark-300">
-              Manage and organize your code snippets
+              {user ? 'Manage and organize your code snippets' : 'Discover and explore code snippets'}
             </p>
           </div>
           
           <div className="mt-4 lg:mt-0">
-            <Link
-              to="/create"
-              className="btn-primary flex items-center space-x-2"
-            >
-              <Plus className="h-4 w-4" />
-              <span>New Snippet</span>
-            </Link>
+            {user ? (
+              <Link
+                to="/create"
+                className="btn-primary flex items-center space-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>New Snippet</span>
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="btn-secondary flex items-center space-x-2"
+              >
+                <span>Login to Create</span>
+              </Link>
+            )}
           </div>
         </div>
 

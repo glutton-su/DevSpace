@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevSpace Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1f2937;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #059669; }
+        .error { background: #dc2626; }
+        .info { background: #2563eb; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DevSpace React Test</h1>
+        
+        <div id="status"></div>
+        
+        <div>
+            <button onclick="testBackend()">Test Backend</button>
+            <button onclick="testFrontend()">Test Frontend</button>
+            <button onclick="testReact()">Test React Mounting</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const resultsDiv = document.getElementById('results');
+        
+        function addStatus(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            statusDiv.appendChild(div);
+        }
+        
+        function addResult(message) {
+            const div = document.createElement('div');
+            div.style.margin = '10px 0';
+            div.style.padding = '10px';
+            div.style.background = '#374151';
+            div.style.borderRadius = '5px';
+            div.textContent = message;
+            resultsDiv.appendChild(div);
+        }
+        
+        async function testBackend() {
+            try {
+                addResult('Testing backend connection...');
+                const response = await fetch('http://localhost:5000/api/health');
+                const data = await response.json();
+                addResult(`✅ Backend OK: ${data.status} - ${data.environment}`);
+                addStatus('Backend is running!', 'success');
+            } catch (error) {
+                addResult(`❌ Backend Error: ${error.message}`);
+                addStatus('Backend connection failed!', 'error');
+            }
+        }
+        
+        function testFrontend() {
+            addResult('Testing frontend...');
+            addResult(`✅ Frontend URL: ${window.location.href}`);
+            addResult(`✅ User Agent: ${navigator.userAgent}`);
+            addResult(`✅ JavaScript: Working`);
+            addStatus('Frontend is working!', 'success');
+        }
+        
+        function testReact() {
+            addResult('Testing React mounting...');
+            
+            // Check if React is loaded
+            if (typeof React !== 'undefined') {
+                addResult('✅ React is loaded');
+            } else {
+                addResult('❌ React not found in global scope');
+            }
+            
+            // Check if ReactDOM is loaded
+            if (typeof ReactDOM !== 'undefined') {
+                addResult('✅ ReactDOM is loaded');
+            } else {
+                addResult('❌ ReactDOM not found in global scope');
+            }
+            
+            // Check if the root element exists
+            const rootElement = document.getElementById('root');
+            if (rootElement) {
+                addResult('✅ Root element found');
+                addResult(`Root content: ${rootElement.innerHTML.substring(0, 100)}...`);
+            } else {
+                addResult('❌ Root element not found');
+            }
+            
+            addStatus('React test completed!', 'info');
+        }
+        
+        // Auto-run tests
+        window.onload = function() {
+            addStatus('DevSpace Test Page Loaded', 'info');
+            setTimeout(testBackend, 1000);
+            setTimeout(testFrontend, 2000);
+            setTimeout(testReact, 3000);
+        };
+    </script>
+</body>
+</html> 
