@@ -265,6 +265,11 @@ const getUserSnippetStats = async (req, res) => {
       }]
     });
 
+    // Get starred snippets count for the user
+    const starredCount = await Star.count({
+      where: { userId: user.id, codeSnippetId: { [Op.ne]: null } }
+    });
+
     // Get language statistics
     const languageStats = await CodeSnippet.findAll({
       attributes: [
@@ -328,6 +333,7 @@ const getUserSnippetStats = async (req, res) => {
 
     res.json({
       snippetCount,
+      starredCount,
       languageStats: formattedLanguageStats,
       totalSnippets
     });

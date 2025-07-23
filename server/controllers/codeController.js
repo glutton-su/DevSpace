@@ -428,8 +428,36 @@ const getUserOwnedSnippets = async (req, res) => {
       offset: offset
     });
 
+    // Add star data to snippets like in getPublicSnippets
+    const enrichedSnippets = await Promise.all(snippets.rows.map(async (snippet) => {
+      const snippetData = snippet.toJSON();
+      
+      try {
+        // Get actual star count
+        const starCount = await Star.count({
+          where: { codeSnippetId: snippet.id }
+        });
+        
+        snippetData.starCount = starCount;
+        
+        // Check user's star status
+        const userStar = await Star.findOne({
+          where: { userId: req.user.id, codeSnippetId: snippet.id }
+        });
+        
+        snippetData.isStarred = !!userStar;
+      } catch (error) {
+        console.error('Error enriching snippet:', snippet.id, error);
+        // Fallback to default values
+        snippetData.starCount = 0;
+        snippetData.isStarred = false;
+      }
+      
+      return snippetData;
+    }));
+
     res.json({ 
-      snippets: snippets.rows,
+      snippets: enrichedSnippets,
       total: snippets.count,
       page: parseInt(page),
       totalPages: Math.ceil(snippets.count / parseInt(limit))
@@ -483,8 +511,30 @@ const getUserStarredSnippets = async (req, res) => {
       offset: offset
     });
 
+    // Add star data to snippets
+    const enrichedSnippets = await Promise.all(starredSnippets.rows.map(async (snippet) => {
+      const snippetData = snippet.toJSON();
+      
+      try {
+        // Get actual star count
+        const starCount = await Star.count({
+          where: { codeSnippetId: snippet.id }
+        });
+        
+        snippetData.starCount = starCount;
+        snippetData.isStarred = true; // User starred this snippet
+      } catch (error) {
+        console.error('Error enriching starred snippet:', snippet.id, error);
+        // Fallback to default values
+        snippetData.starCount = 0;
+        snippetData.isStarred = true;
+      }
+      
+      return snippetData;
+    }));
+
     res.json({ 
-      snippets: starredSnippets.rows,
+      snippets: enrichedSnippets,
       total: starredSnippets.count,
       page: parseInt(page),
       totalPages: Math.ceil(starredSnippets.count / parseInt(limit))

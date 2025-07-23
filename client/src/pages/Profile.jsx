@@ -33,7 +33,7 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState('snippets');
   const [isFollowing, setIsFollowing] = useState(false);
   const [languageStats, setLanguageStats] = useState([]);
-  const [snippetStats, setSnippetStats] = useState({ snippetCount: 0, totalSnippets: 0 });
+  const [snippetStats, setSnippetStats] = useState({ snippetCount: 0, starredCount: 0, totalSnippets: 0 });
   const [tabCounts, setTabCounts] = useState({ snippets: 0, starred: 0, activity: 0 });
 
   const isOwnProfile = !username || username === currentUser?.username;
@@ -153,20 +153,22 @@ const Profile = () => {
       setLanguageStats(response.languageStats || []);
       setSnippetStats({
         snippetCount: response.snippetCount || 0,
+        starredCount: response.starredCount || 0,
         totalSnippets: response.totalSnippets || 0
       });
       
       // Update snippets tab count
       setTabCounts(prev => ({
         ...prev,
-        snippets: response.snippetCount || 0
+        snippets: response.snippetCount || 0,
+        starred: response.starredCount || 0
       }));
     } catch (error) {
       console.error('Error fetching language stats:', error);
       // Fallback to empty array instead of mock data
       setLanguageStats([]);
-      setSnippetStats({ snippetCount: 0, totalSnippets: 0 });
-      setTabCounts(prev => ({ ...prev, snippets: 0 }));
+      setSnippetStats({ snippetCount: 0, starredCount: 0, totalSnippets: 0 });
+      setTabCounts(prev => ({ ...prev, snippets: 0, starred: 0 }));
     }
   };
 
@@ -383,42 +385,6 @@ const Profile = () => {
                 ))}
               </div>
             </div>
-
-            {/* Achievements */}
-            <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Achievements</h3>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                    <Award className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">First Snippet</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Created your first code snippet</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                    <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Rising Star</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Received 100+ stars</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                    <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Team Player</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Collaborated on 5+ snippets</p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Main Content */}
@@ -447,7 +413,7 @@ const Profile = () => {
 
             {/* Tab Content */}
             <div>
-              {activeTab === 'snippets' && (
+              {(activeTab === 'snippets' || activeTab === 'starred') && (
                 <div>
                   {loading ? (
                     <div className="flex justify-center py-12">
@@ -467,14 +433,22 @@ const Profile = () => {
                   ) : (
                     <div className="text-center py-12">
                       <Code className="h-16 w-16 text-gray-400 dark:text-dark-600 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No snippets yet</h3>
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        {activeTab === 'snippets' ? 'No snippets yet' : 'No starred content'}
+                      </h3>
                       <p className="text-gray-600 dark:text-gray-400 mb-6">
-                        {isOwnProfile 
-                          ? "You haven't created any snippets yet. Start sharing your code!"
-                          : "This user hasn't shared any snippets yet."
+                        {activeTab === 'snippets' 
+                          ? (isOwnProfile 
+                              ? "You haven't created any snippets yet. Start sharing your code!"
+                              : "This user hasn't shared any snippets yet."
+                            )
+                          : (isOwnProfile 
+                              ? "You haven't starred anything yet."
+                              : "This user hasn't starred anything yet."
+                            )
                         }
                       </p>
-                      {isOwnProfile && (
+                      {isOwnProfile && activeTab === 'snippets' && (
                         <Link to="/create" className="btn-primary">
                           Create Your First Snippet
                         </Link>
@@ -484,21 +458,17 @@ const Profile = () => {
                 </div>
               )}
 
-              {/* Other tabs placeholder */}
-              {activeTab !== 'snippets' && (
+              {/* Activity tab placeholder */}
+              {activeTab === 'activity' && (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gray-200 dark:bg-dark-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    {activeTab === 'starred' && <Star className="h-8 w-8 text-gray-400 dark:text-dark-400" />}
-                    {activeTab === 'activity' && <TrendingUp className="h-8 w-8 text-gray-400 dark:text-dark-400" />}
+                    <TrendingUp className="h-8 w-8 text-gray-400 dark:text-dark-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                    {activeTab === 'starred' && 'No starred content'}
-                    {activeTab === 'activity' && 'No recent activity'}
-                  </h3>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No recent activity</h3>
                   <p className="text-gray-600 dark:text-gray-400">
                     {isOwnProfile 
-                      ? `You haven't ${activeTab === 'starred' ? 'starred anything' : 'been active'} yet.`
-                      : `This user hasn't ${activeTab === 'starred' ? 'starred anything' : 'been active'} yet.`
+                      ? "You haven't been active yet."
+                      : "This user hasn't been active yet."
                     }
                   </p>
                 </div>
