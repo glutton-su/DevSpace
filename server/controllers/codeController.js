@@ -11,7 +11,7 @@ const { Op } = require("sequelize");
 
 const createCodeSnippet = async (req, res) => {
   try {
-    const { projectId, title, content, language, filePath, tags } = req.body;
+    const { projectId, title, content, language, filePath, tags, allowCollaboration, isPublic } = req.body;
 
     const project = await Project.findByPk(projectId);
 
@@ -40,6 +40,8 @@ const createCodeSnippet = async (req, res) => {
       content,
       language,
       filePath,
+      allowCollaboration: allowCollaboration || false,
+      isPublic: isPublic !== undefined ? isPublic : false,
     });
 
     // Handle tags if provided
@@ -222,7 +224,7 @@ const getCodeSnippetById = async (req, res) => {
 const updateCodeSnippet = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, content, language, filePath, tags } = req.body;
+    const { title, content, language, filePath, tags, allowCollaboration, isPublic } = req.body;
 
     const codeSnippet = await CodeSnippet.findByPk(id, {
       include: [{ model: Project, as: "project" }],
@@ -252,6 +254,8 @@ const updateCodeSnippet = async (req, res) => {
       content: content || codeSnippet.content,
       language: language || codeSnippet.language,
       filePath: filePath !== undefined ? filePath : codeSnippet.filePath,
+      allowCollaboration: allowCollaboration !== undefined ? allowCollaboration : codeSnippet.allowCollaboration,
+      isPublic: isPublic !== undefined ? isPublic : codeSnippet.isPublic,
     });
 
     // Handle tags update if provided
@@ -964,6 +968,125 @@ const getPublicSnippets = async (req, res) => {
   }
 };
 
+// Get collaborative snippets (public snippets with allowCollaboration: true)
+const getCollaborativeSnippets = async (req, res) => {
+  try {
+    console.log('getCollaborativeSnippets called with user:', req.user?.id || 'unauthenticated');
+    
+    const { language, search, page = 1, limit = 20 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    const whereClause = { 
+      isPublic: true, 
+      allowCollaboration: true 
+    };
+
+    if (language) {
+      whereClause.language = language;
+    }
+
+    if (search) {
+      whereClause[Op.or] = [
+        { title: { [Op.like]: `%${search}%` } },
+        { content: { [Op.like]: `%${search}%` } },
+      ];
+    }
+
+    const snippets = await CodeSnippet.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: Project,
+          as: 'project',
+          include: [{
+            model: User,
+            as: 'owner',
+            attributes: ['id', 'username', 'avatarUrl', 'fullName']
+          }]
+        },
+        {
+          model: Tag,
+          as: 'tags',
+          attributes: ['name'],
+          through: { attributes: [] }
+        }
+      ],
+      order: [['updated_at', 'DESC']],
+      limit: parseInt(limit),
+      offset: offset
+    });
+
+    console.log('Found collaborative snippets:', snippets.rows.length);
+
+    // Add star data to snippets
+    const enrichedSnippets = await Promise.all(snippets.rows.map(async (snippet) => {
+      const snippetData = snippet.toJSON();
+      
+      try {
+        // Get actual star count
+        const starCount = await Star.count({
+          where: { codeSnippetId: snippet.id }
+        });
+        
+        snippetData.starCount = starCount;
+        
+        // Get fork count
+        const forkCount = await CodeSnippet.count({
+          where: { forkedFromSnippet: snippet.id }
+        });
+        
+        snippetData.forkCount = forkCount;
+        
+        // If user is authenticated, check their star status
+        if (req.user) {
+          const userStar = await Star.findOne({
+            where: { userId: req.user.id, codeSnippetId: snippet.id }
+          });
+          
+          snippetData.isStarred = !!userStar;
+        } else {
+          snippetData.isStarred = false;
+        }
+        
+        // Transform tags to array of strings for frontend
+        if (snippetData.tags) {
+          snippetData.tags = snippetData.tags.map(tag => tag.name);
+        }
+        
+        // Add author info for frontend compatibility
+        if (snippetData.project && snippetData.project.owner) {
+          snippetData.author = {
+            id: snippetData.project.owner.id,
+            username: snippetData.project.owner.username,
+            name: snippetData.project.owner.fullName || snippetData.project.owner.username,
+            avatarUrl: snippetData.project.owner.avatarUrl
+          };
+        }
+        
+      } catch (error) {
+        console.error('Error enriching collaborative snippet:', snippet.id, error);
+        // Fallback to default values
+        snippetData.starCount = 0;
+        snippetData.forkCount = 0;
+        snippetData.isStarred = false;
+        snippetData.tags = [];
+      }
+      
+      return snippetData;
+    }));
+
+    res.json({ 
+      snippets: enrichedSnippets,
+      total: snippets.count,
+      page: parseInt(page),
+      totalPages: Math.ceil(snippets.count / parseInt(limit))
+    });
+  } catch (error) {
+    console.error('Error getting collaborative snippets:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 // Add snippet collaborator
 const addSnippetCollaborator = async (req, res) => {
   try {
@@ -1081,6 +1204,7 @@ module.exports = {
   toggleSnippetStar,
   forkCodeSnippet,
   getPublicSnippets,
+  getCollaborativeSnippets,
   addSnippetCollaborator,
   removeSnippetCollaborator,
   getSnippetCollaborators,

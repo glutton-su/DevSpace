@@ -11,6 +11,7 @@ const {
   getPublicCodeSnippet,
   updateSnippetVisibility,
   getPublicSnippets,
+  getCollaborativeSnippets,
   getUserOwnedSnippets,
   getUserStarredSnippets,
   getUserForkedSnippets,
@@ -39,6 +40,8 @@ router.post(
     body("content").notEmpty().withMessage("Content is required"),
     body("language").optional().isLength({ max: 50 }),
     body("filePath").optional().isLength({ max: 500 }),
+    body("allowCollaboration").optional().isBoolean().withMessage("allowCollaboration must be boolean"),
+    body("isPublic").optional().isBoolean().withMessage("isPublic must be boolean"),
   ],
   validate,
   createCodeSnippet
@@ -49,6 +52,7 @@ router.get("/project/:projectId", getCodeSnippets);
 
 // New snippet view routes (MUST come before /:id route)
 router.get("/public/all", getPublicSnippets); // Public snippets for dashboard
+router.get("/collaborative", getCollaborativeSnippets); // Collaborative snippets
 router.get("/user/owned", auth, getUserOwnedSnippets); // User's own snippets
 router.get("/user/starred", auth, getUserStarredSnippets); // User's starred snippets
 router.get("/user/forked", auth, getUserForkedSnippets); // User's forked snippets

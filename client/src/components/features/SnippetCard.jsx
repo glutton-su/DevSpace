@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, Calendar, User } from 'lucide-react';
+import { Eye, Calendar, User, Users } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import SnippetActions from './SnippetActions';
 
-const SnippetCard = ({ snippet, onStar, onFork, showFullCode = false }) => {
+const SnippetCard = ({ snippet, onStar, onFork, showFullCode = false, showCollaborationBadge = false }) => {
   const navigate = useNavigate();
 
   const formatDate = (dateString) => {
@@ -63,6 +63,12 @@ const SnippetCard = ({ snippet, onStar, onFork, showFullCode = false }) => {
           <span className={`px-2 py-1 rounded-full text-xs font-medium text-white ${getLanguageColor(snippet.language)}`}>
             {snippet.language}
           </span>
+          {(showCollaborationBadge && snippet.allowCollaboration) && (
+            <span className="px-2 py-1 rounded-full text-xs font-medium text-white bg-green-600 flex items-center space-x-1">
+              <Users className="h-3 w-3" />
+              <span>Collab</span>
+            </span>
+          )}
         </div>
       </div>
 

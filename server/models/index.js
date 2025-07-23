@@ -3,6 +3,7 @@ const User = require("./User");
 const Project = require("./Project");
 const CodeSnippet = require("./CodeSnippet");
 const ProjectCollaborator = require("./ProjectCollaborator");
+const CodeSnippetCollaborator = require("./CodeSnippetCollaborator");
 const Star = require("./Star");
 const Like = require("./Like");
 const Tag = require("./Tag");
@@ -19,6 +20,7 @@ const models = {
   Project: Project(sequelize),
   CodeSnippet: CodeSnippet(sequelize),
   ProjectCollaborator: ProjectCollaborator(sequelize),
+  CodeSnippetCollaborator: CodeSnippetCollaborator(sequelize),
   Star: Star(sequelize),
   Like: Like(sequelize),
   Tag: Tag(sequelize),

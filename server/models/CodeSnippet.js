@@ -48,6 +48,11 @@ module.exports = (sequelize) => {
         allowNull: true,
         field: "forked_from_project",
       },
+      allowCollaboration: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        field: "allow_collaboration",
+      },
     },
     {
       tableName: "code_snippets",
@@ -86,6 +91,10 @@ module.exports = (sequelize) => {
       through: "SnippetTag",
       foreignKey: "codeSnippetId",
       as: "tags",
+    });
+    CodeSnippet.hasMany(models.CodeSnippetCollaborator, {
+      foreignKey: "codeSnippetId",
+      as: "collaborators",
     });
   };
 
