@@ -14,7 +14,10 @@ import {
   GitFork,
   Archive,
   Grid,
-  List
+  List,
+  Tag,
+  X,
+  ChevronDown
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 // commit test
@@ -23,6 +26,8 @@ const Projects = () => {
   const [snippets, setSnippets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [selectedLanguage, setSelectedLanguage] = useState('');
   const [filterType, setFilterType] = useState(user ? 'owned' : 'all'); // Default to 'all' for unauthenticated users
   const [sortBy, setSortBy] = useState('updated');
   const [viewMode, setViewMode] = useState('grid');
@@ -37,13 +42,12 @@ const Projects = () => {
 
   useEffect(() => {
     fetchSnippets();
-  }, [filterType, sortBy, showArchived, searchQuery]);
+  }, [filterType, sortBy, showArchived]);
 
   const fetchSnippets = async () => {
     try {
       setLoading(true);
       const params = {};
-      if (searchQuery) params.search = searchQuery;
       if (showArchived) params.includeArchived = true;
       
       let response;
@@ -76,39 +80,17 @@ const Projects = () => {
           response = await snippetAPI.getPublicSnippets(params);
       }
       
-      let filteredSnippets = response.snippets || response.data || response;
+      let allSnippets = response.snippets || response.data || response;
 
-      if (!Array.isArray(filteredSnippets)) {
-        filteredSnippets = [];
+      if (!Array.isArray(allSnippets)) {
+        allSnippets = [];
       }
 
       // Normalize the snippets data (especially tags)
-      filteredSnippets = normalizeSnippets(filteredSnippets);
+      allSnippets = normalizeSnippets(allSnippets);
 
-      // Apply search filter (client-side backup if not handled by backend)
-      if (searchQuery) {
-        filteredSnippets = filteredSnippets.filter(snippet =>
-          snippet.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          snippet.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          snippet.language?.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      }
-
-      // Sort snippets
-      switch (sortBy) {
-        case 'name':
-          filteredSnippets.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-          break;
-        case 'stars':
-          filteredSnippets.sort((a, b) => (b.starCount || 0) - (a.starCount || 0));
-          break;
-        case 'updated':
-        default:
-          filteredSnippets.sort((a, b) => new Date(b.updated_at || b.updatedAt) - new Date(a.updated_at || a.updatedAt));
-      }
-
-      console.log('Setting snippets:', filteredSnippets.length, 'items');
-      setSnippets(filteredSnippets);
+      console.log('Setting snippets:', allSnippets.length, 'items');
+      setSnippets(allSnippets);
     } catch (error) {
       console.error('Error fetching snippets:', error);
       toast.error('Failed to load snippets');
@@ -116,6 +98,49 @@ const Projects = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Get all unique tags from snippets
+  const getAllTags = () => {
+    const tagSet = new Set();
+    snippets.forEach(snippet => {
+      if (snippet.tags && Array.isArray(snippet.tags)) {
+        snippet.tags.forEach(tag => {
+          const tagName = typeof tag === 'string' ? tag : tag.name || tag;
+          if (tagName) tagSet.add(tagName);
+        });
+      }
+    });
+    return Array.from(tagSet).sort();
+  };
+
+  // Get all unique languages from snippets
+  const getAllLanguages = () => {
+    const languageSet = new Set();
+    snippets.forEach(snippet => {
+      if (snippet.language) {
+        languageSet.add(snippet.language);
+      }
+    });
+    return Array.from(languageSet).sort();
+  };
+
+  // Handle tag selection
+  const handleTagSelect = (tagName) => {
+    setSelectedTags(prev => {
+      if (prev.includes(tagName)) {
+        return prev.filter(t => t !== tagName);
+      } else {
+        return [...prev, tagName];
+      }
+    });
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedTags([]);
+    setSelectedLanguage('');
   };
 
   const handleStar = async (snippetId) => {
@@ -177,12 +202,56 @@ const Projects = () => {
     }
   };
 
-  const filteredSnippets = snippets.filter(snippet =>
-    snippet.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    snippet.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    snippet.language?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (snippet.tags && snippet.tags.some(tag => tag.name?.toLowerCase().includes(searchQuery.toLowerCase())))
-  );
+  // Apply all filters and sorting on the client side
+  const filteredSnippets = (() => {
+    let filtered = [...snippets];
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(snippet =>
+        snippet.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        snippet.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        snippet.language?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (snippet.tags && snippet.tags.some(tag => {
+          const tagName = typeof tag === 'string' ? tag : tag.name || tag;
+          return tagName?.toLowerCase().includes(searchQuery.toLowerCase());
+        }))
+      );
+    }
+
+    // Apply tag filter
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(snippet => {
+        if (!snippet.tags || !Array.isArray(snippet.tags)) return false;
+        return selectedTags.every(selectedTag => 
+          snippet.tags.some(tag => {
+            const tagName = typeof tag === 'string' ? tag : tag.name || tag;
+            return tagName === selectedTag;
+          })
+        );
+      });
+    }
+
+    // Apply language filter
+    if (selectedLanguage) {
+      filtered = filtered.filter(snippet => snippet.language === selectedLanguage);
+    }
+
+    // Sort snippets
+    switch (sortBy) {
+      case 'name':
+        filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+        break;
+      case 'stars':
+        filtered.sort((a, b) => (b.starCount || 0) - (a.starCount || 0));
+        break;
+      case 'updated':
+      default:
+        filtered.sort((a, b) => new Date(b.updated_at || b.updatedAt) - new Date(a.updated_at || a.updatedAt));
+    }
+
+    return filtered;
+  })();
 
   const allFilterOptions = [
     { value: 'all', label: 'All Snippets', icon: Code },
@@ -240,30 +309,25 @@ const Projects = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search projects..."
+                placeholder="Search snippets..."
                 className="input-field pl-10 w-full"
               />
             </div>
 
-            {/* Filter Tabs */}
-            <div className="flex space-x-1 bg-dark-800 rounded-lg p-1">
-              {filterOptions.map(option => {
-                const Icon = option.icon;
-                return (
-                  <button
-                    key={option.value}
-                    onClick={() => setFilterType(option.value)}
-                    className={`flex items-center space-x-1 px-3 py-2 rounded text-sm transition-colors ${
-                      filterType === option.value
-                        ? 'bg-primary-600 text-white'
-                        : 'text-dark-300 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{option.label}</span>
-                  </button>
-                );
-              })}
+            {/* Language Filter */}
+            <div className="relative">
+              <select
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+                className="input-field min-w-[140px]"
+              >
+                <option value="">All Languages</option>
+                {getAllLanguages().map(language => (
+                  <option key={language} value={language}>
+                    {language}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Sort and View Options */}
@@ -303,6 +367,89 @@ const Projects = () => {
             </div>
           </div>
 
+          {/* Filter Tabs */}
+          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-dark-700">
+            {filterOptions.map(option => {
+              const Icon = option.icon;
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => setFilterType(option.value)}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded text-sm transition-colors ${
+                    filterType === option.value
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-dark-800 text-dark-300 hover:text-white hover:bg-dark-700'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{option.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Tag Filter */}
+          <div className="mt-4 pt-4 border-t border-dark-700">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2">
+                <Tag className="h-4 w-4 text-dark-400" />
+                <span className="text-sm font-medium text-dark-300">Filter by Tags</span>
+              </div>
+              {(selectedTags.length > 0 || selectedLanguage || searchQuery) && (
+                <button
+                  onClick={clearFilters}
+                  className="text-xs text-primary-400 hover:text-primary-300 flex items-center space-x-1"
+                >
+                  <X className="h-3 w-3" />
+                  <span>Clear all</span>
+                </button>
+              )}
+            </div>
+            
+            {/* Available Tags */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {getAllTags().slice(0, 20).map(tagName => (
+                <button
+                  key={tagName}
+                  onClick={() => handleTagSelect(tagName)}
+                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                    selectedTags.includes(tagName)
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-dark-800 text-dark-300 border-dark-600 hover:bg-dark-700 hover:text-white'
+                  }`}
+                >
+                  #{tagName}
+                </button>
+              ))}
+              {getAllTags().length > 20 && (
+                <span className="px-3 py-1 text-xs text-dark-500">
+                  +{getAllTags().length - 20} more tags available
+                </span>
+              )}
+            </div>
+
+            {/* Selected Tags */}
+            {selectedTags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                <span className="text-xs text-dark-400">Selected:</span>
+                {selectedTags.map(tagName => (
+                  <span
+                    key={tagName}
+                    className="flex items-center space-x-1 px-2 py-1 bg-primary-600 text-white text-xs rounded-full"
+                  >
+                    <span>#{tagName}</span>
+                    <button
+                      onClick={() => handleTagSelect(tagName)}
+                      className="hover:bg-primary-700 rounded-full p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Show Archived Toggle */}
           <div className="mt-4 pt-4 border-t border-dark-700">
             <label className="flex items-center space-x-2 cursor-pointer">
@@ -320,8 +467,35 @@ const Projects = () => {
 
         {/* Results Info */}
         <div className="flex items-center justify-between mb-6">
-          <div className="text-sm text-dark-400">
-            {filteredSnippets.length} snippet{filteredSnippets.length !== 1 ? 's' : ''} found
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-dark-400">
+              {filteredSnippets.length} snippet{filteredSnippets.length !== 1 ? 's' : ''} found
+              {snippets.length !== filteredSnippets.length && (
+                <span className="text-dark-500"> (from {snippets.length} total)</span>
+              )}
+            </div>
+            
+            {/* Active Filters Summary */}
+            {(searchQuery || selectedTags.length > 0 || selectedLanguage) && (
+              <div className="flex items-center space-x-2 text-xs">
+                <span className="text-dark-500">Filtered by:</span>
+                {searchQuery && (
+                  <span className="px-2 py-1 bg-blue-600/20 text-blue-400 rounded">
+                    Search: "{searchQuery}"
+                  </span>
+                )}
+                {selectedLanguage && (
+                  <span className="px-2 py-1 bg-green-600/20 text-green-400 rounded">
+                    Language: {selectedLanguage}
+                  </span>
+                )}
+                {selectedTags.length > 0 && (
+                  <span className="px-2 py-1 bg-purple-600/20 text-purple-400 rounded">
+                    Tags: {selectedTags.length}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -354,8 +528,8 @@ const Projects = () => {
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">No snippets found</h3>
             <p className="text-dark-400 mb-6">
-              {searchQuery || filterType !== 'all' 
-                ? 'Try adjusting your search criteria'
+              {searchQuery || selectedTags.length > 0 || selectedLanguage || filterType !== 'all' 
+                ? 'Try adjusting your search criteria or filters'
                 : 'Create your first snippet to get started!'
               }
             </p>

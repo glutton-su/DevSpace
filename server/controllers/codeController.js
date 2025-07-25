@@ -951,15 +951,23 @@ const getPublicSnippets = async (req, res) => {
 
     const snippets = await CodeSnippet.findAndCountAll({
       where: whereClause,
-      include: [{
-        model: Project,
-        as: 'project',
-        include: [{
-          model: User,
-          as: 'owner',
-          attributes: ['id', 'username', 'avatarUrl', 'fullName']
-        }]
-      }],
+      include: [
+        {
+          model: Project,
+          as: 'project',
+          include: [{
+            model: User,
+            as: 'owner',
+            attributes: ['id', 'username', 'avatarUrl', 'fullName']
+          }]
+        },
+        {
+          model: Tag,
+          as: 'tags',
+          attributes: ['name'],
+          through: { attributes: [] }
+        }
+      ],
       order: [['updated_at', 'DESC']],
       limit: parseInt(limit),
       offset: offset
@@ -995,6 +1003,11 @@ const getPublicSnippets = async (req, res) => {
           snippetData.isStarred = !!userStar;
         } else {
           snippetData.isStarred = false;
+        }
+        
+        // Transform tags to array of strings for frontend consistency
+        if (snippetData.tags) {
+          snippetData.tags = snippetData.tags.map(tag => typeof tag === 'string' ? tag : tag.name);
         }
       } catch (error) {
         console.error('Error enriching snippet:', snippet.id, error);

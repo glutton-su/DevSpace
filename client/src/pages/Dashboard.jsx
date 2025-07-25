@@ -16,7 +16,8 @@ import {
   List,
   ChevronDown,
   X,
-  Code
+  Code,
+  Tag
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -25,6 +26,8 @@ const Dashboard = () => {
   const [snippets, setSnippets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [selectedLanguage, setSelectedLanguage] = useState('');
   const [sortBy, setSortBy] = useState('recent');
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -32,7 +35,7 @@ const Dashboard = () => {
   useEffect(() => {
     fetchSnippets();
     // eslint-disable-next-line
-  }, [searchQuery, sortBy]);
+  }, [sortBy]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -44,31 +47,20 @@ const Dashboard = () => {
     try {
       setLoading(true);
       const params = {};
-      if (searchQuery) params.search = searchQuery;
       
       // Use public snippets for the dashboard
       const response = await snippetAPI.getPublicSnippets(params);
-      let filteredSnippets = response.snippets || response.data || response;
+      let allSnippets = response.snippets || response.data || response;
       
-      if (!Array.isArray(filteredSnippets)) {
-        filteredSnippets = [];
+      if (!Array.isArray(allSnippets)) {
+        allSnippets = [];
       }
       
       // Normalize the snippets data (especially tags)
-      filteredSnippets = normalizeSnippets(filteredSnippets);
+      allSnippets = normalizeSnippets(allSnippets);
       
-      switch (sortBy) {
-        case 'popular':
-          filteredSnippets.sort((a, b) => (b.starCount || 0) - (a.starCount || 0));
-          break;
-        case 'views':
-          filteredSnippets.sort((a, b) => (b.views || 0) - (a.views || 0));
-          break;
-        case 'recent':
-        default:
-          filteredSnippets.sort((a, b) => new Date(b.updated_at || b.updatedAt) - new Date(a.updated_at || a.updatedAt));
-      }
-      setSnippets(filteredSnippets);
+      console.log('Setting snippets for dashboard:', allSnippets.length, 'items');
+      setSnippets(allSnippets);
     } catch (error) {
       console.error('Error fetching snippets:', error);
       toast.error('Failed to load snippets');
@@ -76,6 +68,42 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Get all unique tags from snippets
+  const getAllTags = () => {
+    const tagSet = new Set();
+    snippets.forEach(snippet => {
+      if (snippet.tags && Array.isArray(snippet.tags)) {
+        snippet.tags.forEach(tag => {
+          const tagName = typeof tag === 'string' ? tag : tag.name || tag;
+          if (tagName) tagSet.add(tagName);
+        });
+      }
+    });
+    return Array.from(tagSet).sort();
+  };
+
+  // Get all unique languages from snippets
+  const getAllLanguages = () => {
+    const languageSet = new Set();
+    snippets.forEach(snippet => {
+      if (snippet.language) {
+        languageSet.add(snippet.language);
+      }
+    });
+    return Array.from(languageSet).sort();
+  };
+
+  // Handle tag selection
+  const handleTagSelect = (tagName) => {
+    setSelectedTags(prev => {
+      if (prev.includes(tagName)) {
+        return prev.filter(t => t !== tagName);
+      } else {
+        return [...prev, tagName];
+      }
+    });
   };
 
   const handleStar = async (snippetId) => {
@@ -116,11 +144,64 @@ const Dashboard = () => {
 
   const clearFilters = () => {
     setSearchQuery('');
+    setSelectedTags([]);
+    setSelectedLanguage('');
     setSearchParams({});
   };
 
-  const hasActiveFilters = !!searchQuery;
-  const itemCount = snippets.length;
+  // Apply all filters and sorting on the client side
+  const filteredSnippets = (() => {
+    let filtered = [...snippets];
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(snippet =>
+        snippet.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        snippet.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        snippet.language?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (snippet.tags && snippet.tags.some(tag => {
+          const tagName = typeof tag === 'string' ? tag : tag.name || tag;
+          return tagName?.toLowerCase().includes(searchQuery.toLowerCase());
+        }))
+      );
+    }
+
+    // Apply tag filter
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(snippet => {
+        if (!snippet.tags || !Array.isArray(snippet.tags)) return false;
+        return selectedTags.every(selectedTag => 
+          snippet.tags.some(tag => {
+            const tagName = typeof tag === 'string' ? tag : tag.name || tag;
+            return tagName === selectedTag;
+          })
+        );
+      });
+    }
+
+    // Apply language filter
+    if (selectedLanguage) {
+      filtered = filtered.filter(snippet => snippet.language === selectedLanguage);
+    }
+
+    // Sort snippets
+    switch (sortBy) {
+      case 'popular':
+        filtered.sort((a, b) => (b.starCount || 0) - (a.starCount || 0));
+        break;
+      case 'views':
+        filtered.sort((a, b) => (b.views || 0) - (a.views || 0));
+        break;
+      case 'recent':
+      default:
+        filtered.sort((a, b) => new Date(b.updated_at || b.updatedAt) - new Date(a.updated_at || a.updatedAt));
+    }
+
+    return filtered;
+  })();
+
+  const hasActiveFilters = !!(searchQuery || selectedTags.length > 0 || selectedLanguage);
+  const itemCount = filteredSnippets.length;
 
   return (
     <div className="min-h-screen">
@@ -161,7 +242,7 @@ const Dashboard = () => {
 
         {/* Search and Filters */}
         <div className="card mb-8">
-          <form onSubmit={handleSearch} className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             {/* Search Bar */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -174,19 +255,24 @@ const Dashboard = () => {
               />
             </div>
 
-            {/* Filter Button (Mobile) */}
-            <button
-              type="button"
-              onClick={() => setShowFilters(!showFilters)}
-              className="lg:hidden btn-secondary flex items-center space-x-2"
-            >
-              <Filter className="h-4 w-4" />
-              <span>Filters</span>
-              <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-            </button>
+            {/* Language Filter */}
+            <div className="relative">
+              <select
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+                className="input-field min-w-[140px]"
+              >
+                <option value="">All Languages</option>
+                {getAllLanguages().map(language => (
+                  <option key={language} value={language}>
+                    {language}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            {/* Desktop Filters */}
-            <div className="hidden lg:flex items-center space-x-4">
+            {/* Sort and View Options */}
+            <div className="flex items-center space-x-2">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -196,102 +282,118 @@ const Dashboard = () => {
                 <option value="popular">Popular</option>
                 <option value="views">Most Viewed</option>
               </select>
-            </div>
 
-            {/* View Toggle */}
-            <div className="hidden lg:flex items-center bg-gray-200 dark:bg-dark-800 rounded-lg p-1">
-              <button
-                type="button"
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded ${
-                  viewMode === 'grid' 
-                    ? 'bg-primary-600 text-white' 
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                <Grid className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded ${
-                  viewMode === 'list' 
-                    ? 'bg-primary-600 text-white' 
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                <List className="h-4 w-4" />
-              </button>
-            </div>
-          </form>
-
-          {/* Mobile Filters */}
-          {showFilters && (
-            <div className="lg:hidden mt-4 pt-4 border-t border-gray-300 dark:border-dark-700 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="input-field"
+              <div className="flex items-center bg-gray-200 dark:bg-dark-800 rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded ${
+                    viewMode === 'grid' 
+                      ? 'bg-primary-600 text-white' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
                 >
-                  <option value="recent">Recent</option>
-                  <option value="popular">Popular</option>
-                  <option value="views">Most Viewed</option>
-                </select>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-700 dark:text-gray-300">View Mode</span>
-                <div className="flex items-center bg-gray-200 dark:bg-dark-800 rounded-lg p-1">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded ${
-                      viewMode === 'grid' 
-                        ? 'bg-primary-600 text-white' 
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <Grid className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded ${
-                      viewMode === 'list' 
-                        ? 'bg-primary-600 text-white' 
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <List className="h-4 w-4" />
-                  </button>
-                </div>
+                  <Grid className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded ${
+                    viewMode === 'list' 
+                      ? 'bg-primary-600 text-white' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <List className="h-4 w-4" />
+                </button>
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Active Filters */}
+          {/* Tag Filter */}
+          <div className="mt-4 pt-4 border-t border-gray-300 dark:border-dark-700">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2">
+                <Tag className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Tags</span>
+              </div>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="text-xs text-primary-600 hover:text-primary-500 flex items-center space-x-1"
+                >
+                  <X className="h-3 w-3" />
+                  <span>Clear all</span>
+                </button>
+              )}
+            </div>
+            
+            {/* Available Tags */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {getAllTags().slice(0, 20).map(tagName => (
+                <button
+                  key={tagName}
+                  onClick={() => handleTagSelect(tagName)}
+                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                    selectedTags.includes(tagName)
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-dark-600 hover:bg-gray-200 dark:hover:bg-dark-700 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  #{tagName}
+                </button>
+              ))}
+              {getAllTags().length > 20 && (
+                <span className="px-3 py-1 text-xs text-gray-500 dark:text-gray-500">
+                  +{getAllTags().length - 20} more tags available
+                </span>
+              )}
+            </div>
+
+            {/* Selected Tags */}
+            {selectedTags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Selected:</span>
+                {selectedTags.map(tagName => (
+                  <span
+                    key={tagName}
+                    className="flex items-center space-x-1 px-2 py-1 bg-primary-600 text-white text-xs rounded-full"
+                  >
+                    <span>#{tagName}</span>
+                    <button
+                      onClick={() => handleTagSelect(tagName)}
+                      className="hover:bg-primary-700 rounded-full p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Active Filters Summary */}
           {hasActiveFilters && (
             <div className="mt-4 pt-4 border-t border-gray-300 dark:border-dark-700">
               <div className="flex items-center justify-between">
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className="text-gray-500 dark:text-gray-400">Active filters:</span>
                   {searchQuery && (
-                    <span className="inline-flex items-center space-x-1 bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-200 px-2 py-1 rounded-full text-sm">
-                      <span>Search: "{searchQuery}"</span>
-                      <button
-                        onClick={() => setSearchQuery('')}
-                        className="hover:text-primary-600 dark:hover:text-primary-400"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
+                    <span className="px-2 py-1 bg-blue-600/20 text-blue-600 dark:text-blue-400 rounded">
+                      Search: "{searchQuery}"
+                    </span>
+                  )}
+                  {selectedLanguage && (
+                    <span className="px-2 py-1 bg-green-600/20 text-green-600 dark:text-green-400 rounded">
+                      Language: {selectedLanguage}
+                    </span>
+                  )}
+                  {selectedTags.length > 0 && (
+                    <span className="px-2 py-1 bg-purple-600/20 text-purple-600 dark:text-purple-400 rounded">
+                      Tags: {selectedTags.length}
                     </span>
                   )}
                 </div>
-                <button
-                  onClick={clearFilters}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                >
-                  Clear all
-                </button>
               </div>
             </div>
           )}
@@ -320,13 +422,13 @@ const Dashboard = () => {
           <div className="flex justify-center py-12">
             <LoadingSpinner size="lg" text="Loading snippets..." />
           </div>
-        ) : snippets.length > 0 ? (
+        ) : filteredSnippets.length > 0 ? (
           <div className={
             viewMode === 'grid' 
               ? 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'
               : 'space-y-6'
           }>
-            {snippets.map((snippet) => (
+            {filteredSnippets.map((snippet) => (
               <SnippetCard
                 key={snippet.id}
                 snippet={snippet}
