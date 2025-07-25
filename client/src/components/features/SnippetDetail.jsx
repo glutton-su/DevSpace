@@ -170,6 +170,10 @@ const SnippetDetail = () => {
   };
 
   const isOwner = snippet && user && snippet.project?.owner?.id === user.id;
+  const isCollaborator = snippet?.isCollaborator && (snippet?.collaboratorRole === 'editor' || snippet?.collaboratorRole === 'admin');
+  const canEditCollaborative = snippet?.allowCollaboration && snippet?.isPublic && user && !isOwner && !isCollaborator;
+  const canEdit = isOwner || isCollaborator || canEditCollaborative;
+  
   const canManageCollaborators = isOwner || (snippet?.collaborators?.some(c => 
     c.userId === user?.id && c.role === 'admin'
   ));
@@ -272,27 +276,27 @@ const SnippetDetail = () => {
                       <Users size={16} />
                     </button>
                   )}
+                  {canEdit && (
+                    <button
+                      onClick={handleEdit}
+                      className="p-2 text-dark-600 dark:text-dark-300 hover:text-blue-600 
+                               dark:hover:text-blue-400 rounded-lg hover:bg-dark-100 
+                               dark:hover:bg-dark-800 transition-colors"
+                      title="Edit snippet"
+                    >
+                      <Edit size={16} />
+                    </button>
+                  )}
                   {isOwner && (
-                    <>
-                      <button
-                        onClick={handleEdit}
-                        className="p-2 text-dark-600 dark:text-dark-300 hover:text-blue-600 
-                                 dark:hover:text-blue-400 rounded-lg hover:bg-dark-100 
-                                 dark:hover:bg-dark-800 transition-colors"
-                        title="Edit snippet"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        onClick={handleDelete}
-                        className="p-2 text-dark-600 dark:text-dark-300 hover:text-red-600 
-                                 dark:hover:text-red-400 rounded-lg hover:bg-dark-100 
-                                 dark:hover:bg-dark-800 transition-colors"
-                        title="Delete snippet"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </>
+                    <button
+                      onClick={handleDelete}
+                      className="p-2 text-dark-600 dark:text-dark-300 hover:text-red-600 
+                               dark:hover:text-red-400 rounded-lg hover:bg-dark-100 
+                               dark:hover:bg-dark-800 transition-colors"
+                      title="Delete snippet"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   )}
                 </div>
               </div>
