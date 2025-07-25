@@ -5,7 +5,6 @@ import { useTheme } from '../../context/ThemeContext';
 import NotificationDropdown from '../features/NotificationDropdown';
 import { 
   Code2, 
-  Search, 
   Bell, 
   User, 
   Settings, 
@@ -16,7 +15,6 @@ import {
   Home,
   Users,
   Folder,
-  Shield,
   Sun,
   Moon
 } from 'lucide-react';
@@ -29,15 +27,6 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery('');
-    }
-  };
 
   const handleLogout = () => {
     logout();
@@ -55,11 +44,6 @@ const Navbar = () => {
     { path: '/projects', label: 'Projects', icon: Folder, requireAuth: true },
     { path: '/collaborate', label: 'Collaborate', icon: Users, requireAuth: true },
   ];
-
-  // Add moderation link for admins only
-  if (user?.role === 'admin') {
-    navLinks.push({ path: '/moderation', label: 'Moderation', icon: Shield, requireAuth: true });
-  }
 
   return (
     <nav className="sticky top-0 z-50 glass-effect border-b border-gray-300 dark:border-dark-700/50">
@@ -99,20 +83,6 @@ const Navbar = () => {
                 </Link>
               );
             })}
-          </div>
-
-          {/* Search Bar */}
-          <div className="hidden md:block flex-1 max-w-md mx-8">
-            <form onSubmit={handleSearch} className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-dark-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search snippets, users..."
-                className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-dark-800 border border-gray-300 dark:border-dark-700 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </form>
           </div>
 
           {/* Right Side Actions */}

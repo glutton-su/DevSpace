@@ -17,7 +17,6 @@ const projectRoutes = require("./routes/projects");
 const codeRoutes = require("./routes/code");
 const notificationRoutes = require("./routes/notification");
 const fileRoutes = require("./routes/files"); // Add this line
-const moderationRoutes = require("./routes/moderation");
 
 const app = express();
 const server = http.createServer(app);
@@ -55,8 +54,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/code", codeRoutes);
 app.use("/api/notifications", notificationRoutes);
-app.use("/api/files", fileRoutes); 
-app.use("/api/moderation", moderationRoutes);
+app.use("/api/files", fileRoutes);
 
 // File upload error handling
 app.use(handleMulterError);
