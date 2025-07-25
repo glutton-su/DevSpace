@@ -408,6 +408,7 @@ const SnippetDetail = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-dark-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
             <CollaboratorManager
+              snippet={snippet}
               snippetId={snippet.id}
               isOwner={isOwner}
               onClose={() => {

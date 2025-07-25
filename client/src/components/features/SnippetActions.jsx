@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Star, GitFork, Edit, Users, UserPlus } from 'lucide-react';
+import { Star, GitFork, Edit, Users, UserPlus, Settings } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { snippetAPI } from '../../services/api';
+import CollaborationModal from '../modals/CollaborationModal';
 import toast from 'react-hot-toast';
 
 const SnippetActions = ({ snippet, onStar, onFork, onCollaborate }) => {
   const [isStarred, setIsStarred] = useState(snippet?.isStarred || false);
   const [isCollaborating, setIsCollaborating] = useState(false);
+  const [showCollaborationModal, setShowCollaborationModal] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -28,6 +30,9 @@ const SnippetActions = ({ snippet, onStar, onFork, onCollaborate }) => {
   
   // Show collaborate button for non-owners who aren't already collaborators
   const canCollaborate = snippet?.allowCollaboration && user && !isOwner && !isCollaborator;
+  
+  // Check if user can manage collaborators (owners or admin collaborators)
+  const canManageCollaborators = isOwner || (isCollaborator && collaboratorRole === 'admin');
 
   const handleEdit = () => {
     navigate(`/snippet/${snippet.id}/edit`);
@@ -96,26 +101,36 @@ const SnippetActions = ({ snippet, onStar, onFork, onCollaborate }) => {
             </span>
           )}
 
-          {/* Collaborate button - for non-owners who aren't already collaborators */}
-          {canCollaborate && (
+          {/* Manage Collaborators button - for owners and admin collaborators */}
+          {canManageCollaborators && (
             <button
-              onClick={handleCollaborate}
-              disabled={isCollaborating}
-              className="flex items-center space-x-1 text-dark-400 hover:text-purple-500 transition-colors disabled:opacity-50"
-              title="Join project collaboration group"
+              onClick={() => setShowCollaborationModal(true)}
+              className="flex items-center space-x-1 text-gray-600 dark:text-dark-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+              title="Manage collaborators"
             >
+              <Settings className="h-4 w-4" />
+              <span className="text-sm">Manage</span>
+            </button>
+          )}
+
+          {/* Collaborate button - for non-owners who aren't already collaborators */}
+          {canCollaborate && (          <button
+            onClick={handleCollaborate}
+            disabled={isCollaborating}
+            className="flex items-center space-x-1 text-gray-600 dark:text-dark-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors disabled:opacity-50"
+            title="Join project collaboration group"
+          >
               <UserPlus className="h-4 w-4" />
               <span className="text-sm">{isCollaborating ? 'Joining...' : 'Join Group'}</span>
             </button>
           )}
 
           {/* Edit button - for owners, collaborators, and anyone on collaborative snippets */}
-          {canEdit && (
-            <button
-              onClick={handleEdit}
-              className="flex items-center space-x-1 text-dark-400 hover:text-blue-500 transition-colors"
-              title={snippet?.allowCollaboration && !isOwner && !isCollaborator ? "Edit and become a collaborator" : "Edit snippet"}
-            >
+          {canEdit && (          <button
+            onClick={handleEdit}
+            className="flex items-center space-x-1 text-gray-600 dark:text-dark-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+            title={snippet?.allowCollaboration && !isOwner && !isCollaborator ? "Edit and become a collaborator" : "Edit snippet"}
+          >
               <Edit className="h-4 w-4" />
               <span className="text-sm">Edit</span>
             </button>
@@ -125,7 +140,7 @@ const SnippetActions = ({ snippet, onStar, onFork, onCollaborate }) => {
           <button
             onClick={handleStar}
             className={`flex items-center space-x-1 transition-colors ${
-              isStarred ? 'text-yellow-500' : 'text-dark-400 hover:text-yellow-500'
+              isStarred ? 'text-yellow-500' : 'text-gray-600 dark:text-dark-400 hover:text-yellow-500'
             }`}
             title={isStarred ? 'Unstar' : 'Star'}
           >
@@ -136,7 +151,7 @@ const SnippetActions = ({ snippet, onStar, onFork, onCollaborate }) => {
           {/* Fork */}
           <button
             onClick={handleFork}
-            className="flex items-center space-x-1 text-dark-400 hover:text-green-500 transition-colors"
+            className="flex items-center space-x-1 text-gray-600 dark:text-dark-400 hover:text-green-500 dark:hover:text-green-400 transition-colors"
             title="Fork snippet"
           >
             <GitFork className="h-4 w-4" />
@@ -144,6 +159,21 @@ const SnippetActions = ({ snippet, onStar, onFork, onCollaborate }) => {
           </button>
         </div>
       </div>
+
+      {/* Collaboration Modal */}
+      {showCollaborationModal && (
+        <CollaborationModal
+          snippet={snippet}
+          isOpen={showCollaborationModal}
+          onClose={() => setShowCollaborationModal(false)}
+          onUpdate={() => {
+            // Refresh collaboration data
+            if (onCollaborate) {
+              onCollaborate();
+            }
+          }}
+        />
+      )}
     </>
   );
 };

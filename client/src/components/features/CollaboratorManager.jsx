@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { snippetAPI, userAPI } from '../../services/api';
+import { snippetAPI, userAPI, projectAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { 
   Users, 
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const CollaboratorManager = ({ snippetId, isOwner, onClose }) => {
+const CollaboratorManager = ({ snippet, snippetId, isOwner, onClose }) => {
   const { user } = useAuth();
   const [collaborators, setCollaborators] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +22,7 @@ const CollaboratorManager = ({ snippetId, isOwner, onClose }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isProjectLevel, setIsProjectLevel] = useState(false);
 
   useEffect(() => {
     fetchCollaborators();
@@ -30,8 +31,49 @@ const CollaboratorManager = ({ snippetId, isOwner, onClose }) => {
   const fetchCollaborators = async () => {
     try {
       setLoading(true);
-      const response = await snippetAPI.getSnippetCollaborators(snippetId);
-      setCollaborators(response.collaborators || []);
+      
+      // First try to get snippet-level collaborators
+      let response;
+      let allCollaborators = [];
+      let isUsingProjectCollaborators = false;
+      
+      try {
+        response = await snippetAPI.getSnippetCollaborators(snippetId);
+        allCollaborators = response.collaborators || [];
+      } catch (snippetError) {
+        console.log('No snippet-level collaborators found');
+      }
+      
+      // If no snippet collaborators and there's a project, check project collaborators
+      if (allCollaborators.length === 0 && snippet?.project?.id) {
+        try {
+          response = await projectAPI.getProjectCollaborators(snippet.project.id);
+          const projectCollaborators = response.collaborators || [];
+          if (projectCollaborators.length > 0) {
+            allCollaborators = projectCollaborators.map(collab => ({
+              user: collab.user || collab,
+              role: collab.role || 'editor',
+              id: collab.id,
+              userId: collab.userId || collab.user?.id
+            }));
+            isUsingProjectCollaborators = true;
+          }
+        } catch (projectError) {
+          // If project API fails, fall back to project data from snippet
+          if (snippet?.project?.collaborators) {
+            allCollaborators = snippet.project.collaborators.map(collab => ({
+              user: collab.user || collab,
+              role: collab.role || 'editor',
+              id: collab.id,
+              userId: collab.userId || collab.user?.id
+            }));
+            isUsingProjectCollaborators = true;
+          }
+        }
+      }
+      
+      setCollaborators(allCollaborators);
+      setIsProjectLevel(isUsingProjectCollaborators);
     } catch (error) {
       console.error('Error fetching collaborators:', error);
       toast.error('Failed to load collaborators');
@@ -65,11 +107,20 @@ const CollaboratorManager = ({ snippetId, isOwner, onClose }) => {
 
   const addCollaborator = async (userId, role = 'viewer') => {
     try {
-      const response = await snippetAPI.addSnippetCollaborator(snippetId, { 
-        userId, 
-        role 
-      });
-      setCollaborators(prev => [...prev, response.collaborator]);
+      if (isProjectLevel && snippet?.project?.id) {
+        const response = await projectAPI.addProjectCollaborator(snippet.project.id, { 
+          userId, 
+          role 
+        });
+        setCollaborators(prev => [...prev, response.collaborator]);
+      } else {
+        const response = await snippetAPI.addCollaborator(snippetId, { 
+          userId, 
+          role 
+        });
+        setCollaborators(prev => [...prev, response.collaborator]);
+      }
+      
       setSearchQuery('');
       setSearchResults([]);
       setShowAddForm(false);
@@ -86,7 +137,12 @@ const CollaboratorManager = ({ snippetId, isOwner, onClose }) => {
     }
 
     try {
-      await snippetAPI.removeSnippetCollaborator(snippetId, collaboratorId);
+      if (isProjectLevel && snippet?.project?.id) {
+        await projectAPI.removeProjectCollaborator(snippet.project.id, collaboratorId);
+      } else {
+        await snippetAPI.removeCollaborator(snippetId, collaboratorId);
+      }
+      
       setCollaborators(prev => prev.filter(c => c.user.id !== collaboratorId));
       toast.success('Collaborator removed successfully');
     } catch (error) {

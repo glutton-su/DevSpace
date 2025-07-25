@@ -518,6 +518,7 @@ const Projects = () => {
                 onFork={handleFork}
                 onDelete={handleDelete}
                 onArchive={handleArchive}
+                onCollaborate={fetchSnippets}
               />
             ))}
           </div>

@@ -111,6 +111,22 @@ export const projectAPI = {
   forkProject: async (id) => {
     const response = await authAPI.post(`/projects/${id}/fork`);
     return response.data;
+  },
+
+  // Project collaborator methods
+  addProjectCollaborator: async (projectId, username) => {
+    const response = await authAPI.post(`/projects/${projectId}/collaborators`, { username, role: 'editor' });
+    return response.data;
+  },
+
+  removeProjectCollaborator: async (projectId, userId) => {
+    const response = await authAPI.delete(`/projects/${projectId}/collaborators`, { data: { userId } });
+    return response.data;
+  },
+
+  getProjectCollaborators: async (projectId) => {
+    const response = await authAPI.get(`/projects/${projectId}/collaborators`);
+    return response.data;
   }
 };
 
