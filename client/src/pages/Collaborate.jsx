@@ -79,8 +79,8 @@ const Collaborate = () => {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Collaborative Code Snippets</h1>
-            <p className="text-dark-300">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Collaborative Code Snippets</h1>
+            <p className="text-gray-600 dark:text-dark-300">
               Discover and collaborate on code snippets shared by the community
             </p>
           </div>
@@ -108,7 +108,7 @@ const Collaborate = () => {
         <div className="card mb-8">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-dark-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-dark-400" />
               <input
                 type="text"
                 value={searchQuery}
@@ -139,29 +139,71 @@ const Collaborate = () => {
           <div className="card text-center">
             <div className="flex items-center justify-center mb-2">
               <Code className="h-6 w-6 text-primary-400 mr-2" />
-              <span className="text-2xl font-bold text-white">{snippets.length}</span>
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">{snippets.length}</span>
             </div>
-            <p className="text-dark-300">Collaborative Snippets</p>
+            <p className="text-gray-600 dark:text-dark-300">Collaborative Snippets</p>
           </div>
           
           <div className="card text-center">
             <div className="flex items-center justify-center mb-2">
               <Users className="h-6 w-6 text-green-400 mr-2" />
               <span className="text-2xl font-bold text-white">
-                {new Set(snippets.map(s => s.User?.username).filter(Boolean)).size}
+                {(() => {
+                  const allContributors = new Set();
+                  
+                  // Add snippet owners
+                  snippets.forEach(snippet => {
+                    if (snippet.User?.username) {
+                      allContributors.add(snippet.User.username);
+                    }
+                    if (snippet.author?.username) {
+                      allContributors.add(snippet.author.username);
+                    }
+                  });
+                  
+                  // Add direct snippet collaborators
+                  snippets.forEach(snippet => {
+                    if (snippet.collaborators && Array.isArray(snippet.collaborators)) {
+                      snippet.collaborators.forEach(collaborator => {
+                        if (collaborator.User?.username) {
+                          allContributors.add(collaborator.User.username);
+                        }
+                        if (collaborator.username) {
+                          allContributors.add(collaborator.username);
+                        }
+                      });
+                    }
+                  });
+                  
+                  // Add project collaborators
+                  snippets.forEach(snippet => {
+                    if (snippet.project?.collaborators && Array.isArray(snippet.project.collaborators)) {
+                      snippet.project.collaborators.forEach(collaborator => {
+                        if (collaborator.User?.username) {
+                          allContributors.add(collaborator.User.username);
+                        }
+                        if (collaborator.username) {
+                          allContributors.add(collaborator.username);
+                        }
+                      });
+                    }
+                  });
+                  
+                  return allContributors.size;
+                })()}
               </span>
             </div>
-            <p className="text-dark-300">Active Contributors</p>
+            <p className="text-gray-600 dark:text-dark-300">Active Contributors</p>
           </div>
           
           <div className="card text-center">
             <div className="flex items-center justify-center mb-2">
               <Globe className="h-6 w-6 text-secondary-400 mr-2" />
-              <span className="text-2xl font-bold text-white">
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">
                 {languages.length - 1}
               </span>
             </div>
-            <p className="text-dark-300">Programming Languages</p>
+            <p className="text-gray-600 dark:text-dark-300">Programming Languages</p>
           </div>
         </div>
 
@@ -184,10 +226,10 @@ const Collaborate = () => {
         ) : (
           <div className="text-center py-12">
             <div className="w-24 h-24 bg-dark-800 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Code className="h-12 w-12 text-dark-600" />
+              <Code className="h-12 w-12 text-gray-400 dark:text-dark-600" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">No collaborative snippets found</h3>
-            <p className="text-dark-400 mb-6">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No collaborative snippets found</h3>
+            <p className="text-gray-600 dark:text-dark-400 mb-6">
               {searchQuery || filterLanguage !== 'all' 
                 ? 'Try adjusting your search criteria'
                 : 'Be the first to create a collaborative snippet!'

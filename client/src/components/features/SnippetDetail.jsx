@@ -249,8 +249,8 @@ const SnippetDetail = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={copyToClipboard}
-                    className="p-2 text-dark-600 dark:text-dark-300 hover:text-primary-600 
-                             dark:hover:text-primary-400 rounded-lg hover:bg-dark-100 
+                    className="p-2 text-gray-600 dark:text-dark-300 hover:text-primary-600 
+                             dark:hover:text-primary-400 rounded-lg hover:bg-gray-100 
                              dark:hover:bg-dark-800 transition-colors"
                     title="Copy code"
                   >
@@ -258,8 +258,8 @@ const SnippetDetail = () => {
                   </button>
                   <button
                     onClick={downloadSnippet}
-                    className="p-2 text-dark-600 dark:text-dark-300 hover:text-primary-600 
-                             dark:hover:text-primary-400 rounded-lg hover:bg-dark-100 
+                    className="p-2 text-gray-600 dark:text-dark-300 hover:text-primary-600 
+                             dark:hover:text-primary-400 rounded-lg hover:bg-gray-100 
                              dark:hover:bg-dark-800 transition-colors"
                     title="Download"
                   >
@@ -268,8 +268,8 @@ const SnippetDetail = () => {
                   {canManageCollaborators && (
                     <button
                       onClick={() => setShowCollaborators(true)}
-                      className="p-2 text-dark-600 dark:text-dark-300 hover:text-primary-600 
-                               dark:hover:text-primary-400 rounded-lg hover:bg-dark-100 
+                      className="p-2 text-gray-600 dark:text-dark-300 hover:text-primary-600 
+                               dark:hover:text-primary-400 rounded-lg hover:bg-gray-100 
                                dark:hover:bg-dark-800 transition-colors"
                       title="Manage collaborators"
                     >
@@ -279,8 +279,8 @@ const SnippetDetail = () => {
                   {canEdit && (
                     <button
                       onClick={handleEdit}
-                      className="p-2 text-dark-600 dark:text-dark-300 hover:text-blue-600 
-                               dark:hover:text-blue-400 rounded-lg hover:bg-dark-100 
+                      className="p-2 text-gray-600 dark:text-dark-300 hover:text-blue-600 
+                               dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 
                                dark:hover:bg-dark-800 transition-colors"
                       title="Edit snippet"
                     >
@@ -290,8 +290,8 @@ const SnippetDetail = () => {
                   {isOwner && (
                     <button
                       onClick={handleDelete}
-                      className="p-2 text-dark-600 dark:text-dark-300 hover:text-red-600 
-                               dark:hover:text-red-400 rounded-lg hover:bg-dark-100 
+                      className="p-2 text-gray-600 dark:text-dark-300 hover:text-red-600 
+                               dark:hover:text-red-400 rounded-lg hover:bg-gray-100 
                                dark:hover:bg-dark-800 transition-colors"
                       title="Delete snippet"
                     >

@@ -115,7 +115,49 @@ const Collaborate = () => {
             <div className="flex items-center justify-center mb-2">
               <Users className="h-6 w-6 text-green-400 mr-2" />
               <span className="text-2xl font-bold text-white">
-                {new Set(snippets.map(s => s.User?.username).filter(Boolean)).size}
+                {(() => {
+                  const allContributors = new Set();
+                  
+                  // Add snippet owners
+                  snippets.forEach(snippet => {
+                    if (snippet.User?.username) {
+                      allContributors.add(snippet.User.username);
+                    }
+                    if (snippet.author?.username) {
+                      allContributors.add(snippet.author.username);
+                    }
+                  });
+                  
+                  // Add direct snippet collaborators
+                  snippets.forEach(snippet => {
+                    if (snippet.collaborators && Array.isArray(snippet.collaborators)) {
+                      snippet.collaborators.forEach(collaborator => {
+                        if (collaborator.User?.username) {
+                          allContributors.add(collaborator.User.username);
+                        }
+                        if (collaborator.username) {
+                          allContributors.add(collaborator.username);
+                        }
+                      });
+                    }
+                  });
+                  
+                  // Add project collaborators
+                  snippets.forEach(snippet => {
+                    if (snippet.project?.collaborators && Array.isArray(snippet.project.collaborators)) {
+                      snippet.project.collaborators.forEach(collaborator => {
+                        if (collaborator.User?.username) {
+                          allContributors.add(collaborator.User.username);
+                        }
+                        if (collaborator.username) {
+                          allContributors.add(collaborator.username);
+                        }
+                      });
+                    }
+                  });
+                  
+                  return allContributors.size;
+                })()}
               </span>
             </div>
             <p className="text-dark-300">Active Contributors</p>

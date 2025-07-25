@@ -51,10 +51,10 @@ const SnippetCard = ({ snippet, onStar, onFork, onCollaborate, showFullCode = fa
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2 group-hover:text-primary-400 transition-colors">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-primary-400 transition-colors">
             {snippet.title}
           </h3>
-          <p className="text-dark-300 text-sm mb-3 line-clamp-2">
+          <p className="text-gray-600 dark:text-dark-300 text-sm mb-3 line-clamp-2">
             {snippet.description}
           </p>
         </div>
@@ -80,11 +80,11 @@ const SnippetCard = ({ snippet, onStar, onFork, onCollaborate, showFullCode = fa
         <div className="flex-1 min-w-0">
           <Link 
             to={`/profile/${snippet.author?.username || snippet.project?.owner?.username}`}
-            className="text-dark-200 hover:text-white transition-colors text-sm font-medium"
+            className="text-gray-700 dark:text-dark-200 hover:text-gray-900 dark:hover:text-white transition-colors text-sm font-medium"
           >
             {snippet.author?.name || snippet.project?.owner?.fullName || snippet.project?.owner?.username}
           </Link>
-          <div className="flex items-center text-xs text-dark-400 space-x-3">
+          <div className="flex items-center text-xs text-gray-500 dark:text-dark-400 space-x-3">
             <span className="flex items-center space-x-1">
               <Calendar className="h-3 w-3" />
               <span>{formatDate(snippet.createdAt || snippet.created_at)}</span>

@@ -271,10 +271,10 @@ const Projects = () => {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               {user ? 'My Snippets' : 'Code Snippets'}
             </h1>
-            <p className="text-dark-300">
+            <p className="text-gray-600 dark:text-dark-300">
               {user ? 'Manage and organize your code snippets' : 'Discover and explore code snippets'}
             </p>
           </div>
@@ -304,7 +304,7 @@ const Projects = () => {
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-dark-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-dark-400" />
               <input
                 type="text"
                 value={searchQuery}
@@ -342,13 +342,13 @@ const Projects = () => {
                 <option value="stars">Stars</option>
               </select>
 
-              <div className="flex items-center bg-dark-800 rounded-lg p-1">
+              <div className="flex items-center bg-gray-100 dark:bg-dark-800 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 rounded ${
                     viewMode === 'grid' 
                       ? 'bg-primary-600 text-white' 
-                      : 'text-dark-400 hover:text-white'
+                      : 'text-gray-600 dark:text-dark-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
                   <Grid className="h-4 w-4" />
@@ -358,7 +358,7 @@ const Projects = () => {
                   className={`p-2 rounded ${
                     viewMode === 'list' 
                       ? 'bg-primary-600 text-white' 
-                      : 'text-dark-400 hover:text-white'
+                      : 'text-gray-600 dark:text-dark-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
                   <List className="h-4 w-4" />
@@ -368,7 +368,7 @@ const Projects = () => {
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-dark-700">
+          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-dark-700">
             {filterOptions.map(option => {
               const Icon = option.icon;
               return (
@@ -378,7 +378,7 @@ const Projects = () => {
                   className={`flex items-center space-x-1 px-3 py-2 rounded text-sm transition-colors ${
                     filterType === option.value
                       ? 'bg-primary-600 text-white'
-                      : 'bg-dark-800 text-dark-300 hover:text-white hover:bg-dark-700'
+                      : 'bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-dark-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -389,11 +389,11 @@ const Projects = () => {
           </div>
 
           {/* Tag Filter */}
-          <div className="mt-4 pt-4 border-t border-dark-700">
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-dark-700">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-2">
-                <Tag className="h-4 w-4 text-dark-400" />
-                <span className="text-sm font-medium text-dark-300">Filter by Tags</span>
+                <Tag className="h-4 w-4 text-gray-500 dark:text-dark-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-dark-300">Filter by Tags</span>
               </div>
               {(selectedTags.length > 0 || selectedLanguage || searchQuery) && (
                 <button
@@ -415,14 +415,14 @@ const Projects = () => {
                   className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                     selectedTags.includes(tagName)
                       ? 'bg-primary-600 text-white border-primary-600'
-                      : 'bg-dark-800 text-dark-300 border-dark-600 hover:bg-dark-700 hover:text-white'
+                      : 'bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-dark-300 border-gray-300 dark:border-dark-600 hover:bg-gray-200 dark:hover:bg-dark-700 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
                   #{tagName}
                 </button>
               ))}
               {getAllTags().length > 20 && (
-                <span className="px-3 py-1 text-xs text-dark-500">
+                <span className="px-3 py-1 text-xs text-gray-500 dark:text-dark-500">
                   +{getAllTags().length - 20} more tags available
                 </span>
               )}
@@ -431,7 +431,7 @@ const Projects = () => {
             {/* Selected Tags */}
             {selectedTags.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                <span className="text-xs text-dark-400">Selected:</span>
+                <span className="text-xs text-gray-500 dark:text-dark-400">Selected:</span>
                 {selectedTags.map(tagName => (
                   <span
                     key={tagName}
@@ -457,10 +457,10 @@ const Projects = () => {
                 type="checkbox"
                 checked={showArchived}
                 onChange={(e) => setShowArchived(e.target.checked)}
-                className="rounded border-dark-600 bg-dark-700 text-primary-600 focus:ring-primary-500"
+                className="rounded border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-700 text-primary-600 focus:ring-primary-500"
               />
-              <Archive className="h-4 w-4 text-dark-400" />
-              <span className="text-dark-300">Show archived snippets</span>
+              <Archive className="h-4 w-4 text-gray-500 dark:text-dark-400" />
+              <span className="text-gray-700 dark:text-dark-300">Show archived snippets</span>
             </label>
           </div>
         </div>
@@ -468,17 +468,17 @@ const Projects = () => {
         {/* Results Info */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <div className="text-sm text-dark-400">
+            <div className="text-sm text-gray-600 dark:text-dark-400">
               {filteredSnippets.length} snippet{filteredSnippets.length !== 1 ? 's' : ''} found
               {snippets.length !== filteredSnippets.length && (
-                <span className="text-dark-500"> (from {snippets.length} total)</span>
+                <span className="text-gray-500 dark:text-dark-500"> (from {snippets.length} total)</span>
               )}
             </div>
             
             {/* Active Filters Summary */}
             {(searchQuery || selectedTags.length > 0 || selectedLanguage) && (
               <div className="flex items-center space-x-2 text-xs">
-                <span className="text-dark-500">Filtered by:</span>
+                <span className="text-gray-500 dark:text-dark-500">Filtered by:</span>
                 {searchQuery && (
                   <span className="px-2 py-1 bg-blue-600/20 text-blue-400 rounded">
                     Search: "{searchQuery}"
@@ -523,11 +523,11 @@ const Projects = () => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <div className="w-24 h-24 bg-dark-800 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Code className="h-12 w-12 text-dark-600" />
+            <div className="w-24 h-24 bg-gray-100 dark:bg-dark-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Code className="h-12 w-12 text-gray-400 dark:text-dark-600" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">No snippets found</h3>
-            <p className="text-dark-400 mb-6">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No snippets found</h3>
+            <p className="text-gray-600 dark:text-dark-400 mb-6">
               {searchQuery || selectedTags.length > 0 || selectedLanguage || filterType !== 'all' 
                 ? 'Try adjusting your search criteria or filters'
                 : 'Create your first snippet to get started!'
