@@ -6,6 +6,7 @@ const {
   updateUserStats,
   followUser,
   getUserSnippetStats,
+  deleteUser,
 } = require("../controllers/userController");
 const { auth } = require("../middleware/auth");
 
@@ -28,5 +29,8 @@ router.get("/:username/snippet-stats", getUserSnippetStats);
 
 // Follow user
 router.post("/:username/follow", auth, followUser);
+
+// Delete current user account
+router.delete("/account", auth, deleteUser);
 
 module.exports = router;

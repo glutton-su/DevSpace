@@ -356,6 +356,69 @@ const getUserSnippetStats = async (req, res) => {
   }
 };
 
+const deleteUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Find the user
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Start a transaction for atomic deletion
+    const transaction = await User.sequelize.transaction();
+
+    try {
+      // Delete all user's snippets
+      await CodeSnippet.destroy({
+        where: { userId },
+        transaction
+      });
+
+      // Delete all user's projects
+      await Project.destroy({
+        where: { userId },
+        transaction
+      });
+
+      // Delete user's stars
+      await Star.destroy({
+        where: { userId },
+        transaction
+      });
+
+      // Delete user's collaborator relationships
+      await ProjectCollaborator.destroy({
+        where: { userId },
+        transaction
+      });
+
+      // Delete user's stats
+      await UserStats.destroy({
+        where: { userId },
+        transaction
+      });
+
+      // Finally, delete the user
+      await user.destroy({ transaction });
+
+      // Commit the transaction
+      await transaction.commit();
+
+      console.log(`User account deleted: ${user.username} (ID: ${userId})`);
+      res.json({ message: "Account deleted successfully" });
+    } catch (error) {
+      // Rollback the transaction in case of error
+      await transaction.rollback();
+      throw error;
+    }
+  } catch (error) {
+    console.error("Delete user error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getUserProfile,
   getUserProjects,
@@ -363,4 +426,5 @@ module.exports = {
   updateUserStats,
   followUser,
   getUserSnippetStats,
+  deleteUser,
 };

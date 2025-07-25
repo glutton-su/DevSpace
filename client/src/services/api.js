@@ -209,6 +209,12 @@ export const snippetAPI = {
     return response.data;
   },
 
+  // Get public snippets by a specific user
+  getUserPublicSnippets: async (username, params = {}) => {
+    const response = await publicAPI.get(`/code/public/user/${username}`, { params });
+    return response.data;
+  },
+
   // Collaboration methods
   requestCollaboration: async (snippetId) => {
     const response = await authAPI.post(`/code/${snippetId}/collaborate`);
@@ -260,6 +266,11 @@ export const userAPI = {
 
   updateUserStats: async () => {
     const response = await authAPI.post('/users/stats/update');
+    return response.data;
+  },
+
+  deleteUser: async () => {
+    const response = await authAPI.delete('/users/account');
     return response.data;
   }
 };

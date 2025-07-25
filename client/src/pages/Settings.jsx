@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { userAPI } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 import { 
   User, 
   Mail, 
@@ -692,7 +694,32 @@ const PrivacySettings = () => {
 
 // Danger Zone Component
 const DangerZone = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (confirmText !== 'DELETE') {
+      toast.error('Please type "DELETE" to confirm');
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await userAPI.deleteUser();
+      toast.success('Account deleted successfully');
+      logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast.error('Failed to delete account');
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -700,10 +727,25 @@ const DangerZone = () => {
         <h2 className="text-xl font-bold text-red-400 mb-6">Danger Zone</h2>
         
         <div className="space-y-4">
+          {/* Export Data */}
+          <div className="p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
+            <h3 className="text-lg font-semibold text-yellow-400 mb-2">Export Data</h3>
+            <p className="text-dark-300 mb-4">
+              Download a copy of all your data including snippets, projects, and profile information.
+            </p>
+            <button
+              onClick={() => toast.info('Data export feature coming soon')}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              Export Data
+            </button>
+          </div>
+
+          {/* Delete Account */}
           <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
             <h3 className="text-lg font-semibold text-red-400 mb-2">Delete Account</h3>
             <p className="text-dark-300 mb-4">
-              Once you delete your account, there is no going back. Please be certain.
+              Once you delete your account, there is no going back. This will permanently delete your account, all your snippets, projects, and remove all your data from our servers.
             </p>
             <button
               onClick={() => setShowDeleteModal(true)}
@@ -720,24 +762,37 @@ const DangerZone = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="card max-w-md w-full border-red-500/20">
             <h2 className="text-xl font-bold text-red-400 mb-4">Delete Account</h2>
-            <p className="text-dark-300 mb-6">
+            <p className="text-dark-300 mb-4">
               Are you absolutely sure? This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
             </p>
+            <p className="text-dark-300 mb-6">
+              Type <span className="font-mono bg-dark-800 px-2 py-1 rounded text-red-400">DELETE</span> to confirm:
+            </p>
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="Type DELETE to confirm"
+              className="input-field w-full mb-6"
+              disabled={deleting}
+            />
             <div className="flex space-x-3">
               <button
-                onClick={() => setShowDeleteModal(false)}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setConfirmText('');
+                }}
                 className="flex-1 btn-secondary"
+                disabled={deleting}
               >
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  toast.error('Account deletion is not available in demo mode');
-                  setShowDeleteModal(false);
-                }}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                onClick={handleDeleteAccount}
+                disabled={confirmText !== 'DELETE' || deleting}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Delete Account
+                {deleting ? 'Deleting...' : 'Delete Account'}
               </button>
             </div>
           </div>

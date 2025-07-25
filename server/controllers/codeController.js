@@ -1332,6 +1332,90 @@ const requestSnippetCollaboration = async (req, res) => {
   }
 };
 
+// Get public snippets by a specific user
+const getUserPublicSnippets = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    // First, find the user
+    const user = await User.findOne({
+      where: { username },
+      attributes: ['id', 'username', 'fullName']
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Get public snippets for this user through their projects
+    const snippets = await CodeSnippet.findAndCountAll({
+      where: { isPublic: true },
+      include: [
+        {
+          model: Project,
+          as: 'project',
+          where: { userId: user.id },
+          include: [{
+            model: User,
+            as: 'owner',
+            attributes: ['id', 'username', 'avatarUrl', 'fullName']
+          }]
+        },
+        {
+          model: Tag,
+          as: 'tags',
+          attributes: ['name'],
+          through: { attributes: [] }
+        }
+      ],
+      order: [['updated_at', 'DESC']],
+      limit: parseInt(limit),
+      offset: offset
+    });
+
+    // Add star data to snippets (similar to getPublicSnippets)
+    const enrichedSnippets = await Promise.all(snippets.rows.map(async (snippet) => {
+      const snippetData = snippet.toJSON();
+      
+      // Get star count
+      const starCount = await Star.count({
+        where: { codeSnippetId: snippet.id }
+      });
+
+      // Check if current user has starred (if authenticated)
+      let isStarred = false;
+      if (req.user) {
+        const userStar = await Star.findOne({
+          where: { 
+            codeSnippetId: snippet.id,
+            userId: req.user.id
+          }
+        });
+        isStarred = !!userStar;
+      }
+
+      return {
+        ...snippetData,
+        starCount,
+        isStarred,
+        author: snippetData.project?.owner || { username: 'Unknown' }
+      };
+    }));
+
+    res.json({
+      snippets: enrichedSnippets,
+      total: snippets.count,
+      page: parseInt(page),
+      totalPages: Math.ceil(snippets.count / parseInt(limit))
+    });
+  } catch (error) {
+    console.error("Get user public snippets error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   createCodeSnippet,
   getCodeSnippets,
@@ -1348,6 +1432,7 @@ module.exports = {
   toggleSnippetStar,
   forkCodeSnippet,
   getPublicSnippets,
+  getUserPublicSnippets,
   getCollaborativeSnippets,
   addSnippetCollaborator,
   requestSnippetCollaboration,

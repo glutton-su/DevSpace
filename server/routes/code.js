@@ -21,6 +21,7 @@ const {
   requestSnippetCollaboration,
   removeSnippetCollaborator,
   getSnippetCollaborators,
+  getUserPublicSnippets,
 } = require("../controllers/codeController");
 const { auth, optionalAuth } = require("../middleware/auth");
 const { validate } = require("../middleware/validation");
@@ -53,6 +54,7 @@ router.get("/project/:projectId", getCodeSnippets);
 
 // New snippet view routes (MUST come before /:id route)
 router.get("/public/all", getPublicSnippets); // Public snippets for dashboard
+router.get("/public/user/:username", optionalAuth, getUserPublicSnippets); // Public snippets by user
 router.get("/collaborative", getCollaborativeSnippets); // Collaborative snippets
 router.get("/user/owned", auth, getUserOwnedSnippets); // User's own snippets
 router.get("/user/starred", auth, getUserStarredSnippets); // User's starred snippets

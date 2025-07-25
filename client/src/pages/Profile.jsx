@@ -84,11 +84,22 @@ const Profile = () => {
       let response;
       
       if (activeTab === 'snippets') {
-        // Get user's own snippets
-        response = await snippetAPI.getUserOwnedSnippets();
+        if (isOwnProfile) {
+          // Get user's own snippets (including private ones)
+          response = await snippetAPI.getUserOwnedSnippets();
+        } else {
+          // Get public snippets for other users
+          response = await snippetAPI.getUserPublicSnippets(username);
+        }
       } else if (activeTab === 'forked') {
-        // Get user's forked snippets
-        response = await snippetAPI.getUserForkedSnippets();
+        if (isOwnProfile) {
+          // Get user's forked snippets
+          response = await snippetAPI.getUserForkedSnippets();
+        } else {
+          // For other users, we might not want to show forked snippets
+          // or we could create a separate endpoint for public forked snippets
+          response = { snippets: [], total: 0 };
+        }
       } else {
         return;
       }
@@ -191,10 +202,14 @@ const Profile = () => {
     });
   };
 
-  const tabs = [
-    { id: 'snippets', label: 'Snippets', count: tabCounts.snippets || snippetStats.snippetCount },
-    { id: 'forked', label: 'Forked', count: tabCounts.forked }
-  ];
+  const tabs = isOwnProfile 
+    ? [
+        { id: 'snippets', label: 'Snippets', count: tabCounts.snippets || snippetStats.snippetCount },
+        { id: 'forked', label: 'Forked', count: tabCounts.forked }
+      ]
+    : [
+        { id: 'snippets', label: 'Public Snippets', count: tabCounts.snippets || snippetStats.snippetCount }
+      ];
 
   if (!user) {
     return (
@@ -266,10 +281,7 @@ const Profile = () => {
                     <span>{user.location}</span>
                   </div>
                 )}
-                <div className="flex items-center space-x-1">
-                  <Calendar className="h-4 w-4" />
-                  <span>Joined {formatDate(user.joinDate)}</span>
-                </div>
+                
                 {user.website && (
                   <a
                     href={user.website}
