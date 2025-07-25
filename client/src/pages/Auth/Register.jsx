@@ -9,7 +9,7 @@ const Register = () => {
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
     username: '',
     email: '',
     password: '',
@@ -22,10 +22,10 @@ const Register = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Full name is required';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full name is required';
+    } else if (formData.fullName.trim().length < 2) {
+      newErrors.fullName = 'Name must be at least 2 characters';
     }
 
     if (!formData.username.trim()) {
@@ -109,25 +109,25 @@ const Register = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Full Name Field */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-dark-200 mb-2">
+              <label htmlFor="fullName" className="block text-sm font-medium text-dark-200 mb-2">
                 Full Name
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-dark-400" />
                 <input
-                  id="name"
-                  name="name"
+                  id="fullName"
+                  name="fullName"
                   type="text"
-                  value={formData.name}
+                  value={formData.fullName}
                   onChange={handleChange}
                   className={`input-field pl-10 w-full ${
-                    errors.name ? 'border-red-500 focus:ring-red-500' : ''
+                    errors.fullName ? 'border-red-500 focus:ring-red-500' : ''
                   }`}
                   placeholder="Enter your full name"
                 />
               </div>
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-400">{errors.name}</p>
+              {errors.fullName && (
+                <p className="mt-1 text-sm text-red-400">{errors.fullName}</p>
               )}
             </div>
 

@@ -6,6 +6,8 @@ const {
   ProjectCollaborator,
   UserStats,
   CodeSnippet,
+  Like,
+  Comment,
 } = require("../models");
 
 const getUserProfile = async (req, res) => {
@@ -370,52 +372,94 @@ const deleteUser = async (req, res) => {
     const transaction = await User.sequelize.transaction();
 
     try {
+      console.log(`Starting account deletion for user: ${user.username} (ID: ${userId})`);
+
+      // Delete user's collaborator relationships (both directions)
+      console.log('Deleting collaborator relationships...');
+      await ProjectCollaborator.destroy({
+        where: { userId },
+        transaction
+      });
+
+      // Delete user's stars
+      console.log('Deleting user stars...');
+      await Star.destroy({
+        where: { userId },
+        transaction
+      });
+
+      // Delete user's likes
+      console.log('Deleting user likes...');
+      try {
+        await Like.destroy({
+          where: { userId },
+          transaction
+        });
+      } catch (error) {
+        console.log('No likes table or likes to delete:', error.message);
+      }
+
+      // Delete user's comments
+      console.log('Deleting user comments...');
+      try {
+        await Comment.destroy({
+          where: { userId },
+          transaction
+        });
+      } catch (error) {
+        console.log('No comments to delete:', error.message);
+      }
+
       // Delete all user's snippets
+      console.log('Deleting user snippets...');
       await CodeSnippet.destroy({
         where: { userId },
         transaction
       });
 
       // Delete all user's projects
+      console.log('Deleting user projects...');
       await Project.destroy({
         where: { userId },
         transaction
       });
 
-      // Delete user's stars
-      await Star.destroy({
-        where: { userId },
-        transaction
-      });
-
-      // Delete user's collaborator relationships
-      await ProjectCollaborator.destroy({
-        where: { userId },
-        transaction
-      });
-
       // Delete user's stats
+      console.log('Deleting user stats...');
       await UserStats.destroy({
         where: { userId },
         transaction
       });
 
       // Finally, delete the user
+      console.log('Deleting user account...');
       await user.destroy({ transaction });
 
       // Commit the transaction
       await transaction.commit();
 
-      console.log(`User account deleted: ${user.username} (ID: ${userId})`);
-      res.json({ message: "Account deleted successfully" });
+      console.log(`User account deleted successfully: ${user.username} (ID: ${userId})`);
+      res.json({ 
+        success: true,
+        message: "Account deleted successfully" 
+      });
     } catch (error) {
       // Rollback the transaction in case of error
       await transaction.rollback();
+      console.error('Transaction error during user deletion:', error);
       throw error;
     }
   } catch (error) {
     console.error("Delete user error:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    res.status(500).json({ 
+      message: "Server error",
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 };
 

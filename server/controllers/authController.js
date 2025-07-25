@@ -45,16 +45,19 @@ const register = async (req, res) => {
     refreshTokens.add(refreshToken);
 
     res.status(201).json({
+      success: true,
       message: "User registered successfully",
-      accessToken,
+      token: accessToken,
       refreshToken,
       user: {
         id: user.id,
         username: user.username,
         email: user.email,
+        name: user.fullName, // For frontend compatibility
         fullName: user.fullName,
         role: user.role,
         themePreference: user.themePreference,
+        avatarIcon: user.avatarIcon,
       },
     });
   } catch (error) {

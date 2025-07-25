@@ -16,8 +16,7 @@ import {
   Github,
   Twitter,
   Linkedin,
-  MapPin,
-  Camera
+  MapPin
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -112,37 +111,11 @@ const ProfileSettings = ({ user, updateUser }) => {
     }
   };
 
-  const handleAvatarChange = () => {
-    toast.info('Avatar upload feature coming soon!');
-  };
-
   return (
     <div className="card">
       <h2 className="text-xl font-bold text-white mb-6">Profile Information</h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Avatar */}
-        <div className="flex items-center space-x-6">
-          <img
-            src={user?.avatar}
-            alt={user?.name}
-            className="w-20 h-20 rounded-full object-cover"
-          />
-          <div>
-            <button
-              type="button"
-              onClick={handleAvatarChange}
-              className="btn-secondary flex items-center space-x-2"
-            >
-              <Camera className="h-4 w-4" />
-              <span>Change Avatar</span>
-            </button>
-            <p className="text-xs text-dark-400 mt-1">
-              JPG, PNG or GIF. Max size 2MB.
-            </p>
-          </div>
-        </div>
-
         {/* Basic Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -475,19 +448,6 @@ const SecuritySettings = () => {
           </div>
         </form>
       </div>
-
-      <div className="card">
-        <h2 className="text-xl font-bold text-white mb-6">Two-Factor Authentication</h2>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-dark-200 mb-1">Secure your account with 2FA</p>
-            <p className="text-sm text-dark-400">Add an extra layer of security to your account</p>
-          </div>
-          <button className="btn-secondary">
-            Enable 2FA
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
@@ -714,7 +674,8 @@ const DangerZone = () => {
       navigate('/');
     } catch (error) {
       console.error('Error deleting account:', error);
-      toast.error('Failed to delete account');
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Failed to delete account';
+      toast.error(errorMessage);
     } finally {
       setDeleting(false);
       setShowDeleteModal(false);
@@ -727,20 +688,7 @@ const DangerZone = () => {
         <h2 className="text-xl font-bold text-red-400 mb-6">Danger Zone</h2>
         
         <div className="space-y-4">
-          {/* Export Data */}
-          <div className="p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
-            <h3 className="text-lg font-semibold text-yellow-400 mb-2">Export Data</h3>
-            <p className="text-dark-300 mb-4">
-              Download a copy of all your data including snippets, projects, and profile information.
-            </p>
-            <button
-              onClick={() => toast.info('Data export feature coming soon')}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              Export Data
-            </button>
-          </div>
-
+          
           {/* Delete Account */}
           <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
             <h3 className="text-lg font-semibold text-red-400 mb-2">Delete Account</h3>
