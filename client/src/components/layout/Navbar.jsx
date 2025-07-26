@@ -16,7 +16,8 @@ import {
   Users,
   Folder,
   Sun,
-  Moon
+  Moon,
+  BookOpen
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -43,6 +44,7 @@ const Navbar = () => {
     { path: '/dashboard', label: 'Dashboard', icon: Code2, requireAuth: true },
     { path: '/projects', label: 'Projects', icon: Folder, requireAuth: true },
     { path: '/collaborate', label: 'Collaborate', icon: Users, requireAuth: true },
+    { path: '/docs', label: 'Docs', icon: BookOpen },
   ];
 
   return (

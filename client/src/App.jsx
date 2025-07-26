@@ -13,6 +13,7 @@ import Collaborate from './pages/Collaborate';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import Projects from './pages/Projects';
+import Docs from './pages/Docs';
 import SnippetDetail from './pages/SnippetDetail';
 import CreateProject from './components/features/CreateProject';
 import ProjectDetail from './components/features/ProjectDetail';
@@ -71,6 +72,9 @@ function AppContent() {
               <Register />
             </PublicRoute>
           } />
+          
+          {/* Docs Route (accessible to everyone) */}
+          <Route path="/docs" element={<Docs />} />
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={
