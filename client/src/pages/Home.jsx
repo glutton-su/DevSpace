@@ -53,10 +53,10 @@ const Home = () => {
   ];
 
   const stats = [
-    { label: 'Code Snippets', value: '10,000+', icon: Code2 },
-    { label: 'Active Developers', value: '5,000+', icon: Users },
-    { label: 'Programming Languages', value: '20+', icon: Star },
-    { label: 'Collaboration Sessions', value: '1,000+', icon: TrendingUp }
+    { label: '', value: 'Code Snippets', icon: Code2 },
+    { label: '', value: 'Active Developers', icon: Users },
+    { label: '', value: 'Multiple Programming Languages', icon: Star },
+    { label: '', value: 'Collaboration Sessions', icon: TrendingUp }
   ];
 
   return (
