@@ -139,45 +139,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Featured Snippets Section */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">
-                Featured Code Snippets
-              </h2>
-              <p className="text-xl text-dark-300">
-                Discover high-quality code snippets from our community
-              </p>
-            </div>
-            <Link
-              to="/dashboard"
-              className="btn-primary flex items-center space-x-2"
-            >
-              <span>View All</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <LoadingSpinner size="lg" text="Loading featured snippets..." />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-              {featuredSnippets.map((snippet) => (
-                <SnippetCard
-                  key={snippet.id}
-                  snippet={snippet}
-                  onStar={() => snippetAPI.toggleStar(snippet.id)}
-                  onFork={() => snippetAPI.forkSnippet(snippet.id)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+      
 
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-r from-primary-900/30 to-secondary-900/30">
