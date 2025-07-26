@@ -23,10 +23,9 @@ const SnippetActions = ({ snippet, onStar, onFork, onCollaborate, showManageOpti
   const isCollaborator = Boolean(userCollaboration);
   const collaboratorRole = userCollaboration?.role;
   
-  // For collaborative snippets, collaborators with editor/admin role can edit
+  // For collaborative snippets, only owners and actual collaborators with editor/admin role can edit
   const canEdit = isOwner || 
-                  (isCollaborator && (collaboratorRole === 'editor' || collaboratorRole === 'admin')) ||
-                  (snippet?.allowCollaboration && user && !isOwner);
+                  (isCollaborator && (collaboratorRole === 'editor' || collaboratorRole === 'admin'));
   
   // Show collaborate button for non-owners who aren't already collaborators
   const canCollaborate = snippet?.allowCollaboration && user && !isOwner && !isCollaborator;
@@ -125,11 +124,11 @@ const SnippetActions = ({ snippet, onStar, onFork, onCollaborate, showManageOpti
             </button>
           )}
 
-          {/* Edit button - for owners, collaborators, and anyone on collaborative snippets */}
+          {/* Edit button - for owners and actual collaborators only */}
           {canEdit && (          <button
             onClick={handleEdit}
             className="flex items-center space-x-1 text-gray-600 dark:text-dark-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
-            title={snippet?.allowCollaboration && !isOwner && !isCollaborator ? "Edit and become a collaborator" : "Edit snippet"}
+            title="Edit snippet"
           >
               <Edit className="h-4 w-4" />
               <span className="text-sm">Edit</span>

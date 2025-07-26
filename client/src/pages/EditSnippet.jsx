@@ -41,12 +41,11 @@ const EditSnippet = () => {
       const response = await snippetAPI.getSnippet(id);
       const snippetData = response.codeSnippet || response.snippet || response.data || response;
       
-      // Check if user has edit access (owner, project collaborator with editor/admin role, or collaborative snippet)
+      // Check if user has edit access (owner or project collaborator with editor/admin role)
       const isOwner = snippetData.project && snippetData.project.userId === user?.id;
       const isCollaborator = snippetData.isCollaborator && (snippetData.collaboratorRole === 'editor' || snippetData.collaboratorRole === 'admin');
-      const canEditCollaborative = snippetData.allowCollaboration && snippetData.isPublic;
       
-      if (!isOwner && !isCollaborator && !canEditCollaborative) {
+      if (!isOwner && !isCollaborator) {
         toast.error('You do not have permission to edit this snippet');
         navigate('/dashboard');
         return;

@@ -275,29 +275,11 @@ const updateCodeSnippet = async (req, res) => {
       },
     });
 
-    // For collaborative snippets, allow anyone to edit (they'll be auto-added as project collaborator)
-    const hasEditAccess = isOwner || isProjectCollaborator || 
-                          (codeSnippet.allowCollaboration && codeSnippet.isPublic);
+    // Only owners and actual project collaborators can edit
+    const hasEditAccess = isOwner || isProjectCollaborator;
 
     if (!hasEditAccess) {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
-    // If this is a collaborative snippet and user is not owner/collaborator, add them as project collaborator
-    if (codeSnippet.allowCollaboration && !isOwner && !isProjectCollaborator) {
-      try {
-        await ProjectCollaborator.create({
-          projectId: codeSnippet.projectId,
-          userId: req.user.id,
-          role: 'editor'
-        });
-        console.log(`Auto-added user ${req.user.id} as project collaborator for snippet ${id}`);
-      } catch (error) {
-        // If user is already a collaborator, ignore the error
-        if (!error.message.includes('Duplicate entry')) {
-          console.error('Error auto-adding project collaborator:', error);
-        }
-      }
+      return res.status(403).json({ message: "Access denied. You must be a project collaborator to edit this snippet." });
     }
 
     await codeSnippet.update({
