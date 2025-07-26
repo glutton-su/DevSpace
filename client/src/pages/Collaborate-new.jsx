@@ -186,6 +186,7 @@ const Collaborate = () => {
                 key={snippet.id} 
                 snippet={snippet}
                 showCollaborationBadge={true}
+                showManageOption={true}
               />
             ))}
           </div>

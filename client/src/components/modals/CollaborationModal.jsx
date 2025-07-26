@@ -74,6 +74,7 @@ const CollaborationModal = ({ snippet, isOpen, onClose, onUpdate }) => {
 
   const handleAddCollaborator = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     
     if (!newCollaboratorUsername.trim()) {
       toast.error('Please enter a username');
@@ -135,8 +136,22 @@ const CollaborationModal = ({ snippet, isOpen, onClose, onUpdate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-dark-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={(e) => {
+        // Close modal if clicking on backdrop
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div 
+        className="bg-dark-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden"
+        onClick={(e) => {
+          // Prevent clicks inside modal from propagating to backdrop
+          e.stopPropagation();
+        }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-dark-700">
           <div className="flex items-center space-x-3">
@@ -152,7 +167,10 @@ const CollaborationModal = ({ snippet, isOpen, onClose, onUpdate }) => {
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
             className="text-dark-400 hover:text-white transition-colors"
           >
             <X className="h-6 w-6" />
@@ -170,6 +188,8 @@ const CollaborationModal = ({ snippet, isOpen, onClose, onUpdate }) => {
                   type="text"
                   value={newCollaboratorUsername}
                   onChange={(e) => setNewCollaboratorUsername(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.stopPropagation()}
                   placeholder="Enter username"
                   className="input-field flex-1"
                   disabled={addingCollaborator}
@@ -178,6 +198,7 @@ const CollaborationModal = ({ snippet, isOpen, onClose, onUpdate }) => {
                   type="submit"
                   disabled={addingCollaborator || !newCollaboratorUsername.trim()}
                   className="btn-primary px-4 py-2 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {addingCollaborator ? (
                     <Users className="h-4 w-4 animate-pulse" />
@@ -236,7 +257,10 @@ const CollaborationModal = ({ snippet, isOpen, onClose, onUpdate }) => {
                       
                       {isOwner && collaborator.user.id !== user.id && (
                         <button
-                          onClick={() => handleRemoveCollaborator(collaborator.user.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveCollaborator(collaborator.user.id);
+                          }}
                           className="text-red-400 hover:text-red-300 transition-colors p-1 rounded"
                           title="Remove collaborator"
                         >
@@ -271,7 +295,10 @@ const CollaborationModal = ({ snippet, isOpen, onClose, onUpdate }) => {
             )}
           </div>
           <button
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
             className="btn-secondary"
           >
             Close

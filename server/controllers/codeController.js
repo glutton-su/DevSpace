@@ -1246,13 +1246,19 @@ const removeSnippetCollaborator = async (req, res) => {
       return res.status(404).json({ message: 'Snippet not found' });
     }
 
+    // Only the project owner can remove collaborators
     if (snippet.project.userId !== req.user.id) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    await CodeSnippetCollaborator.destroy({
-      where: { codeSnippetId: snippetId, userId }
+    // Remove from project collaborators (this affects all collaborative snippets in the project)
+    const removed = await ProjectCollaborator.destroy({
+      where: { projectId: snippet.projectId, userId }
     });
+
+    if (removed === 0) {
+      return res.status(404).json({ message: 'Collaborator not found' });
+    }
 
     res.json({ message: 'Collaborator removed successfully' });
   } catch (error) {

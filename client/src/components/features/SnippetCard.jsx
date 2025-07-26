@@ -5,7 +5,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import SnippetActions from './SnippetActions';
 
-const SnippetCard = ({ snippet, onStar, onFork, onCollaborate, showFullCode = false, showCollaborationBadge = false }) => {
+const SnippetCard = ({ snippet, onStar, onFork, onCollaborate, showFullCode = false, showCollaborationBadge = false, showManageOption = false }) => {
   const navigate = useNavigate();
 
   const formatDate = (dateString) => {
@@ -215,6 +215,7 @@ const SnippetCard = ({ snippet, onStar, onFork, onCollaborate, showFullCode = fa
         onStar={onStar}
         onFork={onFork}
         onCollaborate={onCollaborate}
+        showManageOption={showManageOption}
       />
     </div>
   );

@@ -6,7 +6,7 @@ import { snippetAPI } from '../../services/api';
 import CollaborationModal from '../modals/CollaborationModal';
 import toast from 'react-hot-toast';
 
-const SnippetActions = ({ snippet, onStar, onFork, onCollaborate }) => {
+const SnippetActions = ({ snippet, onStar, onFork, onCollaborate, showManageOption = false }) => {
   const [isStarred, setIsStarred] = useState(snippet?.isStarred || false);
   const [isCollaborating, setIsCollaborating] = useState(false);
   const [showCollaborationModal, setShowCollaborationModal] = useState(false);
@@ -101,8 +101,8 @@ const SnippetActions = ({ snippet, onStar, onFork, onCollaborate }) => {
             </span>
           )}
 
-          {/* Manage Collaborators button - for owners and admin collaborators */}
-          {canManageCollaborators && (
+          {/* Manage Collaborators button - for owners and admin collaborators - only show on specific pages */}
+          {showManageOption && canManageCollaborators && (
             <button
               onClick={() => setShowCollaborationModal(true)}
               className="flex items-center space-x-1 text-gray-600 dark:text-dark-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
