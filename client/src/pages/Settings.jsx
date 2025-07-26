@@ -102,10 +102,11 @@ const ProfileSettings = ({ user, updateUser }) => {
     e.preventDefault();
     try {
       setLoading(true);
-      updateUser(formData);
+      const response = await userAPI.updateUserProfile(formData);
+      updateUser(response.user);
       toast.success('Profile updated successfully!');
     } catch (error) {
-      toast.error('Failed to update profile');
+      toast.error(error.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -273,12 +274,25 @@ const AccountSettings = ({ user, updateUser }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!formData.email) {
+      toast.error('Email is required');
+      return;
+    }
+    
+    if (formData.email === formData.currentEmail) {
+      toast.error('New email must be different from current email');
+      return;
+    }
+    
     try {
       setLoading(true);
-      updateUser({ email: formData.email });
+      const response = await userAPI.updateUserEmail(formData.email);
+      updateUser(response.user);
+      setFormData(prev => ({ ...prev, currentEmail: formData.email }));
       toast.success('Email updated successfully!');
     } catch (error) {
-      toast.error('Failed to update email');
+      toast.error(error.response?.data?.message || 'Failed to update email');
     } finally {
       setLoading(false);
     }
@@ -347,19 +361,31 @@ const SecuritySettings = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
+      toast.error('All password fields are required');
+      return;
+    }
+    
     if (formData.newPassword !== formData.confirmPassword) {
       toast.error('New passwords do not match');
       return;
     }
 
+    if (formData.newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters long');
+      return;
+    }
+
     try {
       setLoading(true);
-      // Simulate password change
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await userAPI.updateUserPassword({
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword
+      });
       toast.success('Password updated successfully!');
       setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
-      toast.error('Failed to update password');
+      toast.error(error.response?.data?.message || 'Failed to update password');
     } finally {
       setLoading(false);
     }

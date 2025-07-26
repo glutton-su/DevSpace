@@ -272,6 +272,21 @@ export const userAPI = {
   deleteUser: async () => {
     const response = await authAPI.delete('/users/account');
     return response.data;
+  },
+
+  updateUserProfile: async (profileData) => {
+    const response = await authAPI.put('/users/profile', profileData);
+    return response.data;
+  },
+
+  updateUserEmail: async (email) => {
+    const response = await authAPI.put('/users/email', { email });
+    return response.data;
+  },
+
+  updateUserPassword: async (passwordData) => {
+    const response = await authAPI.put('/users/password', passwordData);
+    return response.data;
   }
 };
 

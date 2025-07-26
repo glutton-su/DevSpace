@@ -1,4 +1,5 @@
 const { Op } = require("sequelize");
+const bcrypt = require("bcryptjs");
 const {
   User,
   Project,
@@ -463,6 +464,127 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// Update user profile
+const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, username, bio, location, website, github, twitter, linkedin } = req.body;
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if username is taken by another user
+    if (username && username !== user.username) {
+      const existingUser = await User.findOne({ where: { username } });
+      if (existingUser) {
+        return res.status(400).json({ message: "Username is already taken" });
+      }
+    }
+
+    // Update user profile
+    await user.update({
+      fullName: name || user.fullName,
+      username: username || user.username,
+      bio: bio !== undefined ? bio : user.bio,
+      location: location !== undefined ? location : user.location,
+      website: website !== undefined ? website : user.website,
+      github: github !== undefined ? github : user.github,
+      twitter: twitter !== undefined ? twitter : user.twitter,
+      linkedin: linkedin !== undefined ? linkedin : user.linkedin,
+    });
+
+    // Return updated user without password
+    const updatedUser = await User.findByPk(userId, {
+      attributes: { exclude: ["passwordHash"] }
+    });
+
+    res.json({ 
+      message: "Profile updated successfully", 
+      user: updatedUser 
+    });
+  } catch (error) {
+    console.error("Update user profile error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Update user email
+const updateUserEmail = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if email is taken by another user
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser && existingUser.id !== userId) {
+      return res.status(400).json({ message: "Email is already in use" });
+    }
+
+    // Update email
+    await user.update({ email });
+
+    res.json({ 
+      message: "Email updated successfully",
+      user: { ...user.toJSON(), passwordHash: undefined }
+    });
+  } catch (error) {
+    console.error("Update user email error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Update user password
+const updateUserPassword = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters long" });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    // Update password (let the model hook handle hashing)
+    await user.update({ passwordHash: newPassword });
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Update user password error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getUserProfile,
   getUserProjects,
@@ -471,4 +593,7 @@ module.exports = {
   followUser,
   getUserSnippetStats,
   deleteUser,
+  updateUserProfile,
+  updateUserEmail,
+  updateUserPassword,
 };
