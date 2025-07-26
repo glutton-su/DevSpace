@@ -181,10 +181,7 @@ const Create = () => {
     }
   };
 
-  const handlePreview = () => {
-    // Open preview in new tab/modal
-    toast('Preview feature coming soon!');
-  };
+  
 
   return (
     <div className="min-h-screen py-8">
@@ -272,16 +269,7 @@ const Create = () => {
               <div className="card">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Code</h3>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      type="button"
-                      onClick={handlePreview}
-                      className="btn-secondary flex items-center space-x-1"
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span>Preview</span>
-                    </button>
-                  </div>
+                  
                 </div>
                 <CodeEditor
                   code={formData.code}

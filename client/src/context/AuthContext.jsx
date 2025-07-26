@@ -30,7 +30,6 @@ export const AuthProvider = ({ children }) => {
           setIsAuthenticated(true);
           
           // Verify token is still valid by making a test request
-          // You can add a /auth/verify endpoint to your backend for this
         } catch (error) {
           console.error('Error parsing saved user data:', error);
           logout();

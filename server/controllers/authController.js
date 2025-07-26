@@ -12,20 +12,17 @@ const refreshTokens = new Set();
 const register = async (req, res) => {
   try {
     const { username, email, password, fullName } = req.body;
-
     // Check if user exists
     const existingUser = await User.findOne({
       where: {
         [require("sequelize").Op.or]: [{ email }, { username }],
       },
     });
-
     if (existingUser) {
       return res.status(400).json({
         message: "User with this email or username already exists",
       });
     }
-
     // Create user (password will be hashed by the model hook)
     const user = await User.create({
       username,
@@ -33,17 +30,13 @@ const register = async (req, res) => {
       passwordHash: password, // This will be hashed by the beforeCreate hook
       fullName,
     });
-
     // Create user stats
     await UserStats.create({ userId: user.id });
-
     // Generate tokens
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
-
     // Store refresh token
     refreshTokens.add(refreshToken);
-
     res.status(201).json({
       success: true,
       message: "User registered successfully",
