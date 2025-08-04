@@ -113,23 +113,6 @@ const Create = () => {
     }));
   };
 
-  const createDefaultProject = async () => {
-    try {
-      const projectData = {
-        title: `${formData.title} - Project`,
-        description: formData.description || 'Auto-generated project for snippet',
-        isPublic: formData.isPublic,
-        isCollaborative: formData.allowCollaboration
-      };
-      
-      const result = await projectAPI.createProject(projectData);
-      return result.project?.id || result.id;
-    } catch (error) {
-      console.error('Error creating default project:', error);
-      throw new Error('Failed to create project for snippet');
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -146,12 +129,8 @@ const Create = () => {
     try {
       setLoading(true);
       
-      // Create a default project for the snippet
-      const projectId = await createDefaultProject();
-      
-      // Prepare snippet data
+      // Prepare snippet data - remove projectId requirement for now
       const snippetData = {
-        projectId: projectId,
         title: formData.title,
         content: formData.code,
         language: formData.language,
@@ -161,6 +140,8 @@ const Create = () => {
         allowCollaboration: formData.allowCollaboration,
         allowFork: formData.allowFork
       };
+      
+      console.log('Creating snippet with data:', snippetData);
       
       const result = await snippetAPI.createSnippet(snippetData);
       const snippet = result.data || result;

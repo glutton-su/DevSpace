@@ -11,12 +11,14 @@ const { Op } = require("sequelize");
 
 const createCodeSnippet = async (req, res) => {
   try {
-    console.log(' Creating code snippet - Request body:', JSON.stringify(req.body, null, 2));
-    console.log(' Creating code snippet - User ID:', req.user?.id);
+    console.log('🚀 Creating code snippet - Request body:', JSON.stringify(req.body, null, 2));
+    console.log('🚀 Creating code snippet - User ID:', req.user?.id);
+    
     let { projectId, title, content, language, filePath, tags, allowCollaboration, isPublic } = req.body;
+
     // If no projectId provided, create a default project
     if (!projectId) {
-      console.log(' No projectId provided, creating default project');
+      console.log('🚀 No projectId provided, creating default project');
       const defaultProject = await Project.create({
         userId: req.user.id,
         title: `${title} - Project`,
@@ -27,10 +29,13 @@ const createCodeSnippet = async (req, res) => {
       projectId = defaultProject.id;
       console.log('🚀 Created default project with ID:', projectId);
     }
+
     const project = await Project.findByPk(projectId);
+
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
     }
+
     // Check if user has edit access
     const hasEditAccess =
       project.userId === req.user.id ||
@@ -41,9 +46,11 @@ const createCodeSnippet = async (req, res) => {
           role: { [Op.in]: ["admin", "editor"] },
         },
       }));
+
     if (!hasEditAccess) {
       return res.status(403).json({ message: "Access denied" });
     }
+
     const codeSnippet = await CodeSnippet.create({
       projectId,
       title,
@@ -53,6 +60,7 @@ const createCodeSnippet = async (req, res) => {
       allowCollaboration: allowCollaboration || false,
       isPublic: isPublic !== undefined ? isPublic : false,
     });
+
     // Handle tags if provided
     if (tags && Array.isArray(tags) && tags.length > 0) {
       console.log('🏷️  Processing tags:', tags);
@@ -354,12 +362,15 @@ const updateCodeSnippet = async (req, res) => {
 const deleteCodeSnippet = async (req, res) => {
   try {
     const { id } = req.params;
+
     const codeSnippet = await CodeSnippet.findByPk(id, {
       include: [{ model: Project, as: "project" }],
     });
+
     if (!codeSnippet) {
       return res.status(404).json({ message: "Code snippet not found" });
     }
+
     // Check if user has edit access
     const hasEditAccess =
       codeSnippet.project.userId === req.user.id ||
@@ -370,6 +381,7 @@ const deleteCodeSnippet = async (req, res) => {
           role: { [Op.in]: ["admin", "editor"] },
         },
       }));
+
     if (!hasEditAccess) {
       return res.status(403).json({ message: "Access denied" });
     }

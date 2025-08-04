@@ -30,20 +30,20 @@ const Collaborate = () => {
       setLoading(true);
       console.log('🔄 Fetching collaborative snippets...');
       const response = await snippetAPI.getCollaborativeSnippets();
-      console.log('📦 API Response:', response);
-      console.log('📊 Response snippets:', response.snippets);
+      console.log('API Response:', response);
+      console.log('Response snippets:', response.snippets);
       
       if (response && response.snippets && Array.isArray(response.snippets)) {
-        console.log('✅ Setting snippets:', response.snippets.length, 'items');
+        console.log('Setting snippets:', response.snippets.length, 'items');
         // Normalize the snippets data (especially tags)
         const normalizedSnippets = normalizeSnippets(response.snippets);
         setSnippets(normalizedSnippets);
       } else {
-        console.warn('⚠️  Invalid response format, falling back to empty array');
+        console.warn('Invalid response format, falling back to empty array');
         setSnippets([]);
       }
     } catch (error) {
-      console.error('❌ Error fetching collaborative snippets:', error);
+      console.error('Error fetching collaborative snippets:', error);
       toast.error('Failed to load collaborative snippets');
       setSnippets([]);
     } finally {
