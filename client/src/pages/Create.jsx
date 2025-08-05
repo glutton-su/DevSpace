@@ -250,9 +250,7 @@ const Create = () => {
               <div className="card">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Code</h3>
-                  <div className="flex items-center space-x-2">
-                    
-                  </div>
+                  
                 </div>
                 <CodeEditor
                   code={formData.code}
