@@ -294,6 +294,34 @@ PUT    /api/users/password         - Update password
 GET    /api/users/search           - Search users
 ```
 
+## Data Flow Diagram
+
+The diagram below shows how users, the React client, the Node.js API, and the application's data stores exchange information.
+
+```mermaid
+flowchart LR
+   User[User]
+   Client[React client\nAxios and Socket.IO]
+   API[Express API\nRoutes and controllers]
+   Auth[JWT authentication\nand permission checks]
+   DB[(MySQL database\nSequelize models)]
+   Files[(Local file storage\nUploads directory)]
+   Events[Socket.IO\nreal-time events]
+
+   User -->|Login, create, edit, search| Client
+   Client -->|HTTP requests and file uploads| API
+   API -->|Validate identity and access| Auth
+   Auth -->|Read and write users, projects,\nsnippets, stars, and notifications| DB
+   API -->|Store and retrieve uploaded files| Files
+   DB -->|Records and API responses| API
+   Files -->|Files and download responses| API
+   API -->|JSON responses and JWT tokens| Client
+   Client -->|Authenticated project events| Events
+   Events -->|Verify token and project access| Auth
+   Events -->|Broadcast code, cursor, and typing changes| Client
+   Client -->|Rendered projects and snippets| User
+```
+
 ## 🚀 Deployment
 
 ### Using Docker (Recommended)
